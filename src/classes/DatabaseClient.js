@@ -73,6 +73,73 @@ class DatabaseClient {
       return false;
     }
   }
+
+  /**
+   * Creates a new index in OpenSearch
+   * @param {string} indexName name of the index to be created
+   * @param {object} indexSettings index settings object containing settings, mappings and aliases
+   */
+  async addIndex(indexName, indexSettings) {
+    if (this.#dbClient == null) {
+      throw new Error("Database client not connected");
+    }
+
+    await this.#dbClient.indices.create({
+      index: indexName,
+      body: indexSettings,
+    });
+
+    console.log(`Index "${indexName}" created successfully!`);
+  }
+
+  /**
+   * Bulk ingests documents into an index
+   * @param {string} indexName
+   * @param {Array<T>} documents
+   * @param {string} uniqueIdFieldName
+   * @param {string} createdAtFieldName
+   */
+  async bulkIngestDocuments(indexName, documents, uniqueIdFieldName, createdAtFieldName) {
+    if (this.#dbClient == null) {
+      throw new Error("Database client not connected");
+    }
+
+    const response = await this.#dbClient.helpers.bulk({
+      datasource: documents,
+      onDocument(document) {
+        let tempDoc = structuredClone(document);
+
+        // if createdAtFieldName is provided, include in the document with the current time
+        if (createdAtFieldName) {
+          tempDoc = { ...tempDoc, [createdAtFieldName]: new Date().toISOString() };
+        }
+
+        // document ID provided in the JSON. Ingest as _id and pop it out before ingestion
+        if (uniqueIdFieldName) {
+          const _id = tempDoc[uniqueIdFieldName];
+          delete tempDoc[uniqueIdFieldName];
+          return [
+            {
+              index: { _index: indexName, _id },
+            },
+            tempDoc,
+          ];
+        }
+
+        // document ID not provided, using opensearch internal ID generation
+        return [
+          {
+            index: { _index: indexName },
+          },
+          tempDoc,
+        ];
+      },
+    });
+
+    const { total, failed, successful } = response;
+
+    console.log(`Ingested ${successful}/${total} documents into "${indexName}"! (Failed: ${failed})`);
+  }
 }
 
 export const databaseInstance = new DatabaseClient({ useExternalClient: USE_EXTERNAL_OPENSEARCH });
