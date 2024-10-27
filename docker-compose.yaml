@@ -1,0 +1,39 @@
+services:
+  opensearch-node: 
+    image: opensearchproject/opensearch:${OPENSEARCH_VERSION}
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node
+      - discovery.seed_hosts=opensearch-node
+      - cluster.initial_cluster_manager_nodes=opensearch-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # Set min and max JVM heap sizes to at least 50% of system RAM
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD}" # Sets the demo admin user password when using demo configuration, required for OpenSearch 2.12 and later
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # Maximum number of open files for the opensearch user - set to at least 65536
+        hard: 65536
+    volumes:
+      - ./database/opensearch-data:/usr/share/opensearch/data
+    ports:
+      - ${OPENSEARCH_DATABASE_PORT}:9200
+    networks:
+      - opensearch-net
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION}
+    ports:
+      - ${OPENSEARCH_DASHBOARDS_PORT}:5601
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch-node:9200"]'
+    networks:
+      - opensearch-net
+
+volumes:
+  opensearch-data:
+
+networks:
+  opensearch-net:
