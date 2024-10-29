@@ -1,6 +1,7 @@
 import { databaseInstance } from "../classes/DatabaseClient.js";
 
 export async function createIndex({ indexName, shardCount = 1, replicaCount = 1, mappings = {}, aliases = {} }) {
+  console.log("Running create-index script...");
   try {
     const indexSettings = {
       settings: {

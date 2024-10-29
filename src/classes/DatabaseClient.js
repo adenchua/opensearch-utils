@@ -1,12 +1,14 @@
 import { Client } from "@opensearch-project/opensearch";
 
 import {
+  ALLOWED_DATE_FORMATS,
   EXTERNAL_OPENSEARCH_URL,
   OPENSEARCH_PASSWORD,
   OPENSEARCH_PORT,
   OPENSEARCH_USERNAME,
   USE_EXTERNAL_OPENSEARCH,
 } from "../constants.js";
+import { getDateNow } from "../utils/date-utils.js";
 
 class DatabaseClient {
   #dbClient = null;
@@ -94,12 +96,19 @@ class DatabaseClient {
 
   /**
    * Bulk ingests documents into an index
-   * @param {string} indexName
-   * @param {Array<T>} documents
-   * @param {string} uniqueIdFieldName
-   * @param {string} createdAtFieldName
+   * @param {string} indexName name of the index to ingest documents
+   * @param {Array<T>} documents list of objects to be ingested
+   * @param {string} uniqueIdOptions options for document unique ID
+   * @param {string} generatedTimestampOptions options for generated ingestion timestamp
    */
-  async bulkIngestDocuments(indexName, documents, uniqueIdFieldName, createdAtFieldName) {
+  async bulkIngestDocuments(indexName, documents, uniqueIdOptions, generatedTimestampOptions) {
+    const { autoGenerateId, uniqueIdKey, removeIdFromDocs = false } = uniqueIdOptions;
+    const {
+      autoGenerateTimestamp,
+      timestampKey = "@timestamp",
+      timestampFormat = ALLOWED_DATE_FORMATS[0],
+    } = generatedTimestampOptions;
+
     if (this.#dbClient == null) {
       throw new Error("Database client not connected");
     }
@@ -109,15 +118,17 @@ class DatabaseClient {
       onDocument(document) {
         let tempDoc = structuredClone(document);
 
-        // if createdAtFieldName is provided, include in the document with the current time
-        if (createdAtFieldName) {
-          tempDoc = { ...tempDoc, [createdAtFieldName]: new Date().toISOString() };
+        if (autoGenerateTimestamp) {
+          tempDoc = { ...tempDoc, [timestampKey]: getDateNow(timestampFormat) };
         }
 
-        // document ID provided in the JSON. Ingest as _id and pop it out before ingestion
-        if (uniqueIdFieldName) {
-          const _id = tempDoc[uniqueIdFieldName];
-          delete tempDoc[uniqueIdFieldName];
+        // document ID provided in the JSON. Ingest as _id
+        if (!autoGenerateId) {
+          const _id = tempDoc[uniqueIdKey];
+          // delete ID key from doc
+          if (removeIdFromDocs) {
+            delete tempDoc[uniqueIdKey];
+          }
           return [
             {
               index: { _index: indexName, _id },
