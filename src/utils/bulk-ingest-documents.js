@@ -3,20 +3,24 @@ import path from "path";
 
 import { databaseInstance } from "../classes/DatabaseClient.js";
 import { ALLOWED_DATE_FORMATS } from "../constants.js";
+import { removeDir, unzip } from "./folder-utils.js";
 
 const INPUT_FOLDER_PATH = path.join("input", "bulk-ingest");
 
 export async function bulkIngestJSONs({
   indexName,
-  documentFolderName,
+  documentFileName,
   autoGenerateId = true,
   autoGenerateTimestamp = false,
   uniqueIdOptions = {},
   generatedTimestampOptions = {},
 }) {
   console.log("Running bulk-ingest-documents script...");
-  const documentFilePath = path.join(INPUT_FOLDER_PATH, documentFolderName);
+
+  const tempProcessingFilePath = path.join(INPUT_FOLDER_PATH, "temp");
+  const documentFilePath = path.join(INPUT_FOLDER_PATH, documentFileName);
   const documents = [];
+
   const _uniqueIdOptions = {
     autoGenerateId,
     uniqueIdKey: uniqueIdOptions.uniqueIdKey,
@@ -52,13 +56,20 @@ export async function bulkIngestJSONs({
       }
     }
 
-    fs.readdirSync(documentFilePath).map((filename) => {
-      const filepath = path.join(documentFilePath, filename);
-      const file = JSON.parse(fs.readFileSync(filepath));
-      documents.push(file);
+    unzip(documentFilePath, tempProcessingFilePath, async () => {
+      try {
+        fs.readdirSync(tempProcessingFilePath).map((filename) => {
+          const filepath = path.join(tempProcessingFilePath, filename);
+          const file = JSON.parse(fs.readFileSync(filepath));
+          documents.push(file);
+        });
+        await databaseInstance.bulkIngestDocuments(indexName, documents, _uniqueIdOptions, _generatedTimestampOptions);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        removeDir(tempProcessingFilePath); // cleanup artifact after upload/failure
+      }
     });
-
-    await databaseInstance.bulkIngestDocuments(indexName, documents, _uniqueIdOptions, _generatedTimestampOptions);
   } catch (error) {
     console.error(error);
   }

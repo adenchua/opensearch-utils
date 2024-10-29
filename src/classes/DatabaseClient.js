@@ -129,6 +129,7 @@ class DatabaseClient {
           if (removeIdFromDocs) {
             delete tempDoc[uniqueIdKey];
           }
+
           return [
             {
               index: { _index: indexName, _id },
