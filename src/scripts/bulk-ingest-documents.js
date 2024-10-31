@@ -36,7 +36,7 @@ export async function bulkIngestJSONs({
 
   const tempProcessingFilePath = path.join(INPUT_FOLDER_PATH, "temp");
   const zipFilePath = path.join(INPUT_FOLDER_PATH, zipFileName);
-  console.log(`Extracting content from ${zipFilePath}...`);
+  console.log(`Extracting documents from ${zipFilePath}...`);
   const documents = [];
 
   const _uniqueIdOptions = {
