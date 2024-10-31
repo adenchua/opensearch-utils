@@ -55,7 +55,11 @@ class DatabaseClient {
   }
 
   #getOpenSearchClient(openSearchURL) {
-    return this.#getBasicAuthOpenSearchClient(openSearchURL, OPENSEARCH_USERNAME, OPENSEARCH_PASSWORD);
+    return this.#getBasicAuthOpenSearchClient(
+      openSearchURL,
+      OPENSEARCH_USERNAME,
+      OPENSEARCH_PASSWORD,
+    );
   }
 
   /**
@@ -150,7 +154,9 @@ class DatabaseClient {
 
     const { total, failed, successful } = response;
 
-    console.log(`Ingested ${successful}/${total} documents into "${indexName}"! (Failed: ${failed})`);
+    console.log(
+      `Ingested ${successful}/${total} documents into "${indexName}"! (Failed: ${failed})`,
+    );
   }
 }
 

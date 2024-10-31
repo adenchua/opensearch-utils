@@ -37,7 +37,7 @@ export async function bulkIngestJSONs({
     fs.access(documentFilePath, function (error) {
       if (error) {
         throw new Error(
-          "Unable to locate <documentFolderName>. Please ensure the folder is located in 'input/bulk-ingest/<DOCUMENT_FOLDER_NAME>'"
+          "Unable to locate <documentFolderName>. Please ensure the folder is located in 'input/bulk-ingest/<DOCUMENT_FOLDER_NAME>'",
         );
       }
     });
@@ -45,14 +45,18 @@ export async function bulkIngestJSONs({
     if (!autoGenerateId) {
       const { uniqueIdKey } = uniqueIdOptions;
       if (uniqueIdKey == undefined) {
-        throw new Error("A uniqueIdOptions.uniqueIdKey is required for generation of a custom primary key");
+        throw new Error(
+          "A uniqueIdOptions.uniqueIdKey is required for generation of a custom primary key",
+        );
       }
     }
 
     if (autoGenerateTimestamp) {
       const { timestampFormat } = generatedTimestampOptions;
       if (timestampFormat && !ALLOWED_DATE_FORMATS.includes(timestampFormat)) {
-        throw new Error("Unsupported date format provided for generatedTimestampOptions.timestampFormat");
+        throw new Error(
+          "Unsupported date format provided for generatedTimestampOptions.timestampFormat",
+        );
       }
     }
 
@@ -63,7 +67,12 @@ export async function bulkIngestJSONs({
           const file = JSON.parse(fs.readFileSync(filepath));
           documents.push(file);
         });
-        await databaseInstance.bulkIngestDocuments(indexName, documents, _uniqueIdOptions, _generatedTimestampOptions);
+        await databaseInstance.bulkIngestDocuments(
+          indexName,
+          documents,
+          _uniqueIdOptions,
+          _generatedTimestampOptions,
+        );
       } catch (error) {
         console.error(error);
       } finally {
