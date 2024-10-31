@@ -1,7 +1,7 @@
 import { Client } from "@opensearch-project/opensearch";
 
 import {
-  ALLOWED_DATE_FORMATS,
+  DEFAULT_DATE_FORMAT,
   EXTERNAL_OPENSEARCH_URL,
   OPENSEARCH_PASSWORD,
   OPENSEARCH_PORT,
@@ -110,7 +110,7 @@ class DatabaseClient {
     const {
       autoGenerateTimestamp,
       timestampKey = "@timestamp",
-      timestampFormat = ALLOWED_DATE_FORMATS[0],
+      timestampFormat = DEFAULT_DATE_FORMAT,
     } = generatedTimestampOptions;
 
     if (this.#dbClient == null) {

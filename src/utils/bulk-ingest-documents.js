@@ -1,24 +1,32 @@
+import decompress from "decompress";
 import fs from "fs";
 import path from "path";
 
 import { databaseInstance } from "../classes/DatabaseClient.js";
-import { ALLOWED_DATE_FORMATS } from "../constants.js";
-import { removeDir, unzip } from "./folder-utils.js";
+import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../constants.js";
+import { removeDir } from "./folder-utils.js";
 
 const INPUT_FOLDER_PATH = path.join("input", "bulk-ingest");
 
 export async function bulkIngestJSONs({
   indexName,
-  documentFileName,
+  zipFileName = "",
   autoGenerateId = true,
   autoGenerateTimestamp = false,
-  uniqueIdOptions = {},
-  generatedTimestampOptions = {},
+  uniqueIdOptions = {
+    uniqueIdKey: undefined,
+    removeIdFromDocs: false,
+  },
+  generatedTimestampOptions = {
+    timestampKey: "@timestamp",
+    timestampFormat: DEFAULT_DATE_FORMAT,
+  },
 }) {
   console.log("Running bulk-ingest-documents script...");
 
   const tempProcessingFilePath = path.join(INPUT_FOLDER_PATH, "temp");
-  const documentFilePath = path.join(INPUT_FOLDER_PATH, documentFileName);
+  const zipFilePath = path.join(INPUT_FOLDER_PATH, zipFileName);
+  console.log(`Extracting content from ${zipFilePath}...`);
   const documents = [];
 
   const _uniqueIdOptions = {
@@ -34,10 +42,14 @@ export async function bulkIngestJSONs({
   };
 
   try {
-    fs.access(documentFilePath, function (error) {
+    if (!indexName) {
+      throw new Error("indexName is required");
+    }
+
+    fs.access(zipFilePath, function (error) {
       if (error) {
         throw new Error(
-          "Unable to locate <documentFolderName>. Please ensure the folder is located in 'input/bulk-ingest/<DOCUMENT_FOLDER_NAME>'",
+          "Unable to locate <zipFileName>. Please ensure the folder is located in 'input/bulk-ingest/<ZIP_FILE_NAME>'",
         );
       }
     });
@@ -60,26 +72,26 @@ export async function bulkIngestJSONs({
       }
     }
 
-    unzip(documentFilePath, tempProcessingFilePath, async () => {
-      try {
-        fs.readdirSync(tempProcessingFilePath).map((filename) => {
-          const filepath = path.join(tempProcessingFilePath, filename);
-          const file = JSON.parse(fs.readFileSync(filepath));
-          documents.push(file);
-        });
-        await databaseInstance.bulkIngestDocuments(
-          indexName,
-          documents,
-          _uniqueIdOptions,
-          _generatedTimestampOptions,
-        );
-      } catch (error) {
-        console.error(error);
-      } finally {
-        removeDir(tempProcessingFilePath); // cleanup artifact after upload/failure
-      }
-    });
+    await decompress(zipFilePath, tempProcessingFilePath);
+
+    const fileNames = fs.readdirSync(tempProcessingFilePath);
+    for (let fileName of fileNames) {
+      const filepath = path.join(tempProcessingFilePath, fileName);
+      const document = JSON.parse(fs.readFileSync(filepath, { encoding: "utf-8" }));
+      documents.push(document);
+    }
+
+    console.log(`Extracted ${documents.length} documents. Ingesting to ${indexName}...`);
+
+    databaseInstance.bulkIngestDocuments(
+      indexName,
+      documents,
+      _uniqueIdOptions,
+      _generatedTimestampOptions,
+    );
   } catch (error) {
     console.error(error);
+  } finally {
+    removeDir(tempProcessingFilePath); // cleanup artifact after upload/failure
   }
 }
