@@ -1,6 +1,7 @@
-/database
-/mappings
-/input
+database
+mappings
+input
+
 
 # Logs
 logs

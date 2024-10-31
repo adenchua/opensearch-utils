@@ -4,10 +4,20 @@ import path from "path";
 
 import { databaseInstance } from "../classes/DatabaseClient.js";
 import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../constants.js";
-import { removeDir } from "./folder-utils.js";
+import { removeDir } from "../utils/folder-utils.js";
 
 const INPUT_FOLDER_PATH = path.join("input", "bulk-ingest");
 
+/**
+ * Ingests zip file of individual JSON records in the database
+ * @property {object} options
+ * @property {string} options.indexName name of the database index
+ * @property {string} options.zipFileName name of the zip file to process
+ * @property {boolean} options.autoGenerateId generates a document ID automatically upon ingestion
+ * @property {boolean} options.autoGenerateTimestamp generates an ingestion timestamp automatically
+ * @property {object} options.uniqueIdOptions options to customize document ID during ingestion
+ * @property {object} options.generatedTimestampOptions options to customize ingestion timestamp
+ */
 export async function bulkIngestJSONs({
   indexName,
   zipFileName = "",

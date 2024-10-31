@@ -1,5 +1,14 @@
 import { databaseInstance } from "../classes/DatabaseClient.js";
 
+/**
+ * Creates an index in OpenSearch database
+ * @property {object} options
+ * @property {string} options.indexName name of the database index
+ * @property {number} options.shardCount index shard count
+ * @property {number} options.replicaCount index replica count
+ * @property {object} options.mappings OpenSearch index mapping
+ * @property {object} options.aliases OpenSearch index alias
+ */
 export async function createIndex({
   indexName,
   shardCount = 1,
