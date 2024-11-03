@@ -93,7 +93,7 @@ export async function bulkIngestJSONs({
 
     console.log(`Extracted ${documents.length} documents. Ingesting to ${indexName}...`);
 
-    databaseInstance.bulkIngestDocuments(
+    await databaseInstance.bulkIngestDocuments(
       indexName,
       documents,
       _uniqueIdOptions,
