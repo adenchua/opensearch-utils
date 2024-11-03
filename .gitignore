@@ -1,8 +1,9 @@
-database
-mappings
-input
-output
+/database
+/mappings
+/output
 
+/input/bulk-ingest/*
+!/input/bulk-ingest/PLACEHOLDER.txt
 
 # Logs
 logs
