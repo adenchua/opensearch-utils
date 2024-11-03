@@ -43,6 +43,10 @@ export async function exportFromIndex({
 
     console.log("Preparing to zip...");
 
+    if (documents.length === 0) {
+      throw new Error("No documents in index!");
+    }
+
     for (const document of documents) {
       writeDocumentToDir(outputFullPath, document);
     }
