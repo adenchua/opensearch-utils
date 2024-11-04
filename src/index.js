@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import { SELECTED_CONFIG, SELECTED_SCRIPT } from "../configs/configSelector.js";
+import { SELECTED_CONFIG, SELECTED_SCRIPT } from "./configSelector.js";
 import { APP_VERSION } from "./constants.js";
 
 const CONFIG_PATH = path.join("configs", SELECTED_CONFIG);

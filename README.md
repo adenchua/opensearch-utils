@@ -54,4 +54,57 @@ Configure the following environment keys in `.env` file:
 
 ## Using the scripts
 
-TODO
+Before running any script, create the config `json` file in `/configs` folder. The content of the `json` is described in the sections below.
+
+After configuring the script, modify the `/src/configSelector.js` file and select the config and the script to use.
+
+Run `npm run start` and it should automatically start up the script
+
+### (Script) Create Index
+
+Creates an index in the database.
+
+```json
+{
+  "indexName": "sample-index", // create an index with this index name
+  "shardCount": 1, // (optional) index shard count. Defaults to 1
+  "replicaCount": 1, // (optional) index replica count. Defaults to 1
+  "mappings": {}, // (optional) OpenSearch index mapping. Defaults an an empty object (dynamic mapping)
+  "aliases": {}, // (optional) OpenSearch index aliases. Defaults to an empty object (no alias)
+};
+```
+
+### (Script) Bulk Ingest Documents
+
+Takes in a zipped folder (`./input/bulk-ingest/xxx.zip`) of json files and ingests to an index.
+
+```json
+{
+  "indexName": "sample-index", // ingests the jsons to this index name
+  "zipFileName": "sample.zip", // name of the zipped folder to extract json files from. stored in /input/bulk-ingest/*
+  "autoGenerateId": true, // (optional) boolean flag to use OpenSearch's internal ID generation as _id. When this is set to false, uniqueIdOptions must be provided. Defaults to true.
+  "autoGenerateTimestamp": false, // (optional) boolean flag to generate an additional ingestion timestamp field. When this is set to true, you can modify the generateTimestampOptions for finer control of the new field.
+  "uniqueIdOptions": {
+    "uniqueIdKey": "id", // When "autoGenerateId" is set to false, this value must be provided. Denotes the primary key field of the document and set that field value to _id in OpenSearch.
+    "removeIdFromDocs": false // (optional) deletes the field denoted by "uniqueIdKey" in the document before ingestion. Defaults to false
+  },
+  "generatedTimestampOptions": {
+    "timestampKey": "@timestamp", // (optional) When "autoGenerateTimestamp" is set to true, you may update this value. Denotes the new field to be added to the document during ingestion. Defaults to "@timestamp"
+    "timestampFormat": "iso8601-utc" // (optional) timestamp format of the generated timestamp. Permitted values only. Defaults to "iso8601-utc"
+  }
+}
+```
+
+### (Script) Extract From Index
+
+Extracts all documents from an index and saves each document as a json. Zip file will be generated under `./output/-export-from-index/YYYY-MM-dd/*`
+
+```json
+{
+  "indexName": "sample-index", // index to extract documents from
+  "searchQuery": { "query": { "match_all": {} } }, // (optional) OpenSearch search query to filter results for extraction. Defaults to match everything
+  "scrollSize": 500, // (optional) scroll size of each retrieval from the database. Defaults to 500
+  "scrollWindowTimeout": "1m", // (optional) scroll window timeout of OpenSearch's Scroll API. Defaults to "1m". For larger scroll sizes, you may want to increase this timeout window
+  "outputFileName": "sample-index-qwdq-213-ewqeqw-dqw" // (optional) output zip file name. Defaults to <INDEX_NAME>-<UUID> if not provided
+}
+```
