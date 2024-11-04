@@ -1,23 +1,25 @@
-import { BULK_INGEST_DOCUMENTS_CONFIGS } from "./configs/bulkIngestDocumentsConfig.js";
-import { CREATE_INDEX_CONFIGS } from "./configs/createIndexConfig.js";
-import { EXPORT_FROM_INDEX_CONFIGS } from "./configs/exportFromIndexConfig.js";
-import { bulkIngestJSONs } from "./scripts/bulk-ingest-documents.js";
-import { createIndex } from "./scripts/create-index.js";
-import { exportFromIndex } from "./scripts/export-from-index.js";
+import fs from "fs";
+import path from "path";
 
-const VERSION = "1.0.0";
+import { SELECTED_CONFIG, SELECTED_SCRIPT } from "../configs/configSelector.js";
+import { APP_VERSION } from "./constants.js";
 
-// update the configuration used for each function
-const options = {
-  createIndex: () => createIndex(CREATE_INDEX_CONFIGS.sampleConfig1),
-  bulkIngestJSONs: () => bulkIngestJSONs(BULK_INGEST_DOCUMENTS_CONFIGS.sampleConfig1),
-  exportFromIndex: () => exportFromIndex(EXPORT_FROM_INDEX_CONFIGS.sampleConfig2),
-};
+const CONFIG_PATH = path.join("configs", SELECTED_CONFIG);
 
-async function main(callbackFn) {
-  console.log(`Running OpenSearch-Utils version ${VERSION}...`);
-  callbackFn();
+function loadConfig() {
+  const { parser, invokeScript, name } = SELECTED_SCRIPT;
+  console.log(`Loading configuration from: ${SELECTED_CONFIG}...`);
+  const options = JSON.parse(fs.readFileSync(CONFIG_PATH, { encoding: "utf-8" }));
+  const transformedOptions = parser(options);
+
+  return { invokeScript, options: transformedOptions, name };
 }
 
-// select option
-main(options.createIndex);
+function main() {
+  console.log(`Running OpenSearch-Utils version ${APP_VERSION}...`);
+  const { invokeScript, options, name } = loadConfig();
+  console.log(`Running ${name} script...`);
+  invokeScript(options);
+}
+
+main();

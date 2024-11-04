@@ -16,7 +16,6 @@ export async function createIndex({
   mappings = {},
   aliases = {},
 }) {
-  console.log("Running create-index script...");
   try {
     const indexSettings = {
       settings: {

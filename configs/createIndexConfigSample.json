@@ -1,0 +1,12 @@
+{
+  "indexName": "sample-index",
+  "shardCount": 1,
+  "replicaCount": 1,
+  "mappings": {
+    "properties": {
+      "age": {
+        "type": "integer"
+      }
+    }
+  }
+}

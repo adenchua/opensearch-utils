@@ -8,7 +8,7 @@ import {
   OPENSEARCH_USERNAME,
   USE_EXTERNAL_OPENSEARCH,
 } from "../constants.js";
-import { getDateNow } from "../utils/date-utils.js";
+import { getDateNow } from "../utils/dateUtils.js";
 
 class DatabaseClient {
   #dbClient = null;
@@ -23,10 +23,6 @@ class DatabaseClient {
 
   async #logConnectionStatus() {
     console.info(`Connecting to database URL: ${this.#databaseURL}...`);
-    const isDatabaseConnected = await this.ping();
-    const successMessage = "Connected to database successfully!";
-    const failedMessage = "Failed to connect to database...";
-    console.info(isDatabaseConnected ? successMessage : failedMessage);
   }
 
   #getOpenSearchURL(useExternalClient) {

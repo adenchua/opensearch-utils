@@ -1,5 +1,6 @@
 import "dotenv/config";
 
+export const APP_VERSION = "1.0.0";
 export const OPENSEARCH_USERNAME = process.env.OPENSEARCH_USERNAME || "";
 export const OPENSEARCH_PASSWORD = process.env.OPENSEARCH_PASSWORD || "";
 export const OPENSEARCH_PORT = process.env.OPENSEARCH_DATABASE_PORT || "9200";

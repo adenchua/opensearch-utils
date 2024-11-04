@@ -4,7 +4,7 @@ import path from "path";
 
 import { databaseInstance } from "../classes/DatabaseClient.js";
 import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../constants.js";
-import { removeDir } from "../utils/folder-utils.js";
+import { removeDir } from "../utils/folderUtils.js";
 
 const INPUT_FOLDER_PATH = path.join("input", "bulk-ingest");
 
@@ -32,8 +32,6 @@ export async function bulkIngestJSONs({
     timestampFormat: DEFAULT_DATE_FORMAT,
   },
 }) {
-  console.log("Running bulk-ingest-documents script...");
-
   const tempProcessingFilePath = path.join(INPUT_FOLDER_PATH, "temp");
   const zipFilePath = path.join(INPUT_FOLDER_PATH, zipFileName);
   console.log(`Extracting documents from ${zipFilePath}...`);

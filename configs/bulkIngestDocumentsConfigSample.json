@@ -1,0 +1,10 @@
+{
+  "indexName": "sample-index",
+  "zipFileName": "sample.zip",
+  "autoGenerateId": false,
+  "autoGenerateTimestamp": false,
+  "uniqueIdOptions": {
+    "uniqueIdKey": "_id",
+    "removeIdFromDocs": true
+  }
+}

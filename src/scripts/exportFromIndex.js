@@ -3,8 +3,8 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
 import { databaseInstance } from "../classes/DatabaseClient.js";
-import { getTodayDatePrettyFormat } from "../utils/date-utils.js";
-import { removeDir, writeDocumentToDir, zipFolder } from "../utils/folder-utils.js";
+import { getTodayDatePrettyFormat } from "../utils/dateUtils.js";
+import { removeDir, writeDocumentToDir, zipFolder } from "../utils/folderUtils.js";
 
 const dateToday = getTodayDatePrettyFormat();
 const OUTPUT_PATH = path.join("output", "export-from-index", dateToday);
@@ -25,8 +25,6 @@ export async function exportFromIndex({
   scrollWindowTimeout = "1m",
   outputFileName,
 }) {
-  console.log("Running export from index script...");
-
   try {
     const fileName = outputFileName || `${indexName}-${uuidv4()}`;
     const outputFullPath = path.join(OUTPUT_PATH, fileName);
