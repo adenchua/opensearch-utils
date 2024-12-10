@@ -7,8 +7,8 @@ import {
   OPENSEARCH_PORT,
   OPENSEARCH_USERNAME,
   USE_EXTERNAL_OPENSEARCH,
-} from "../constants.js";
-import { getDateNow } from "../utils/dateUtils.js";
+} from "../constants";
+import { getDateNow } from "../utils/dateUtils";
 
 class DatabaseClient {
   #dbClient = null;

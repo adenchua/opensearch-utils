@@ -1,11 +1,11 @@
-import { bulkIngestJSONs } from "./bulkIngestDocuments.js";
-import { createIndex } from "./createIndex.js";
-import { exportFromIndex } from "./exportFromIndex.js";
+import { bulkIngestJSONs } from "./bulkIngestDocuments.ts";
+import { createIndex } from "./createIndex.ts";
+import { exportFromIndex } from "./exportFromIndex.ts";
 import {
   buildBulkIngestDocumentsConfig,
   buildCreateIndexConfig,
   buildExportFromIndexConfig,
-} from "../utils/configUtils.js";
+} from "../utils/configUtils.ts";
 
 export const SCRIPTS = Object.freeze({
   CREATE_INDEX: { invokeScript: createIndex, parser: buildCreateIndexConfig, name: "CREATE INDEX" },

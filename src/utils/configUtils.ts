@@ -1,4 +1,4 @@
-import { DEFAULT_DATE_FORMAT } from "../constants.js";
+import { DEFAULT_DATE_FORMAT } from "../constants";
 
 export function buildBulkIngestDocumentsConfig({
   indexName,

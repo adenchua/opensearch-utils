@@ -2,9 +2,9 @@ import decompress from "decompress";
 import fs from "fs";
 import path from "path";
 
-import { databaseInstance } from "../classes/DatabaseClient.js";
-import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../constants.js";
-import { removeDir } from "../utils/folderUtils.js";
+import { databaseInstance } from "../classes/DatabaseClient";
+import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../constants";
+import { removeDir } from "../utils/folderUtils";
 
 const INPUT_FOLDER_PATH = path.join("input", "bulk-ingest");
 
@@ -83,7 +83,7 @@ export async function bulkIngestJSONs({
     await decompress(zipFilePath, tempProcessingFilePath);
 
     const fileNames = fs.readdirSync(tempProcessingFilePath);
-    for (let fileName of fileNames) {
+    for (const fileName of fileNames) {
       const filepath = path.join(tempProcessingFilePath, fileName);
       const document = JSON.parse(fs.readFileSync(filepath, { encoding: "utf-8" }));
       documents.push(document);

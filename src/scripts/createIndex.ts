@@ -1,4 +1,4 @@
-import { databaseInstance } from "../classes/DatabaseClient.js";
+import { databaseInstance } from "../classes/DatabaseClient";
 
 /**
  * Creates an index in OpenSearch database

@@ -2,9 +2,9 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
-import { databaseInstance } from "../classes/DatabaseClient.js";
-import { getTodayDatePrettyFormat } from "../utils/dateUtils.js";
-import { removeDir, writeDocumentToDir, zipFolder } from "../utils/folderUtils.js";
+import { databaseInstance } from "../classes/DatabaseClient";
+import { getTodayDatePrettyFormat } from "../utils/dateUtils";
+import { removeDir, writeDocumentToDir, zipFolder } from "../utils/folderUtils";
 
 const dateToday = getTodayDatePrettyFormat();
 const OUTPUT_PATH = path.join("output", "export-from-index", dateToday);

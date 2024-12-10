@@ -1,4 +1,4 @@
-import { SCRIPTS } from "./scripts/index.js";
+import { SCRIPTS } from "./scripts";
 
 /**
  * Modify and add new configs to this object

@@ -1,4 +1,4 @@
-import { ALLOWED_DATE_FORMATS } from "../constants.js";
+import { ALLOWED_DATE_FORMATS } from "../constants";
 
 /**
  * Return the current date in various formats
