@@ -158,8 +158,12 @@ class OpenSearchUtils {
 
     console.log("Preparing to zip...");
 
-    if (documents.length === 0) {
+    if (documents && documents.length === 0) {
       throw new Error("No documents in index!");
+    }
+
+    if (documents == undefined) {
+      throw new Error("Unable to retrieve documents, please try again");
     }
 
     for (const document of documents) {
