@@ -2,8 +2,9 @@ import { select } from "@inquirer/prompts";
 import { promises as fs } from "fs";
 import path from "path";
 
-import OpenSearchUtils from "./classes/OpensearchUtils";
-import { APP_VERSION } from "./constants";
+import DatabaseClient from "./classes/DatabaseClient";
+import OpenSearchUtils from "./classes/OpenSearchUtils";
+import { APP_VERSION, OPENSEARCH_PASSWORD, OPENSEARCH_URL, OPENSEARCH_USERNAME } from "./constants";
 
 type SelectionType = "CREATE_INDEX" | "BULK_INGEST" | "EXPORT_FROM_INDEX";
 
@@ -54,7 +55,20 @@ async function getConfig(foldername: string) {
 async function run() {
   console.log(`Running OpenSearch-Utils version ${APP_VERSION}...`);
 
-  const openSearchUtils = new OpenSearchUtils();
+  const databaseClient = new DatabaseClient(
+    OPENSEARCH_URL,
+    OPENSEARCH_USERNAME,
+    OPENSEARCH_PASSWORD,
+  );
+  const connectionSuccessful = await databaseClient.ping();
+
+  if (!connectionSuccessful) {
+    throw new Error("Failed to connect to database");
+  } else {
+    console.log("Connected to database succesfully!");
+  }
+
+  const openSearchUtils = new OpenSearchUtils(databaseClient);
 
   const selectedScript = await getSelectedScript();
   let selectedConfig;

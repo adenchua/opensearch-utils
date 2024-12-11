@@ -1,44 +1,17 @@
 import { Client, opensearchtypes } from "@opensearch-project/opensearch";
 
-import {
-  DEFAULT_DATE_FORMAT,
-  EXTERNAL_OPENSEARCH_URL,
-  OPENSEARCH_PASSWORD,
-  OPENSEARCH_PORT,
-  OPENSEARCH_USERNAME,
-  USE_EXTERNAL_OPENSEARCH,
-} from "../constants";
-import { getDateNow } from "../utils/dateUtils";
 import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
+import { getDateNow } from "../utils/dateUtils";
 
 class DatabaseClient {
   private dbClient: Client | null = null;
-  private databaseURL: string = "";
 
-  constructor({ useExternalClient = false }) {
-    const openSearchURL = this.#getOpenSearchURL(useExternalClient);
-    const dbClient = this.#getOpenSearchClient(openSearchURL);
+  constructor(databaseURL: string, username: string, password: string) {
+    const dbClient = this.#getBasicAuthOpenSearchClient(databaseURL, username, password);
     this.dbClient = dbClient;
-    this.#logConnectionStatus();
   }
 
-  async #logConnectionStatus() {
-    console.info(`Connecting to database URL: ${this.databaseURL}...`);
-  }
-
-  #getOpenSearchURL(useExternalClient) {
-    let result;
-    if (useExternalClient) {
-      result = EXTERNAL_OPENSEARCH_URL;
-    } else {
-      result = `https://localhost:${OPENSEARCH_PORT}`;
-    }
-
-    this.databaseURL = result;
-    return result;
-  }
-
-  #getBasicAuthOpenSearchClient(openSearchURL, username, password) {
+  #getBasicAuthOpenSearchClient(openSearchURL: string, username: string, password: string) {
     return new Client({
       node: openSearchURL,
       auth: {
@@ -51,68 +24,50 @@ class DatabaseClient {
     });
   }
 
-  #getOpenSearchClient(openSearchURL) {
-    return this.#getBasicAuthOpenSearchClient(
-      openSearchURL,
-      OPENSEARCH_USERNAME,
-      OPENSEARCH_PASSWORD,
-    );
-  }
-
   // Pings OpenSearch database client. Returns true if connection is established and open, false otherwise
   async ping(): Promise<boolean> {
     if (this.dbClient == null) {
       return false;
     }
 
-    try {
-      const pingResponse = await this.dbClient.ping();
-      return pingResponse.statusCode === 200;
-    } catch (error) {
-      console.error(error);
-      return false;
-    }
+    const pingResponse = await this.dbClient.ping();
+    return pingResponse.statusCode === 200;
   }
 
   // Creates a new index in OpenSearch
   async addIndex(
     indexName: string,
     indexSettings: opensearchtypes.IndicesPutTemplateRequest["body"],
-  ): Promise<void> {
+  ): Promise<unknown> {
     if (this.dbClient == null) {
       throw new Error("Database client not connected");
     }
 
-    await this.dbClient.indices.create({
+    if (indexName === "") {
+      throw new Error("Database index name cannot be an empty string");
+    }
+
+    const response = await this.dbClient.indices.create({
       index: indexName,
       body: indexSettings,
     });
 
-    console.log(`Index "${indexName}" created successfully!`);
+    return response.body;
   }
 
   // Bulk ingests documents into an index
   async bulkIngestDocuments<T>(
     indexName: string,
     documents: Array<T>,
-    uniqueIdOptions: {
-      autoGenerateId: boolean;
-      uniqueIdKey: string;
+    documentIdOptions?: {
+      idKey: string;
       removeIdFromDocs: boolean;
     },
-    generatedTimestampOptions: {
-      autoGenerateTimestamp: boolean;
+    generatedTimestampOptions?: {
       timestampKey: string;
       timestampFormat: ALLOWED_DATE_FORMATS_TYPE;
     },
-  ) {
-    const { autoGenerateId, uniqueIdKey, removeIdFromDocs = false } = uniqueIdOptions;
-    const {
-      autoGenerateTimestamp,
-      timestampKey = "@timestamp",
-      timestampFormat = DEFAULT_DATE_FORMAT,
-    } = generatedTimestampOptions;
-
+  ): Promise<{ total: number; failed: number; successful: number }> {
     if (this.dbClient == null) {
       throw new Error("Database client not connected");
     }
@@ -122,21 +77,24 @@ class DatabaseClient {
       onDocument(document) {
         let tempDoc = structuredClone(document);
 
-        if (autoGenerateTimestamp) {
+        // add date timestamp field to each document
+        if (generatedTimestampOptions) {
+          const { timestampFormat, timestampKey } = generatedTimestampOptions;
           tempDoc = { ...tempDoc, [timestampKey]: getDateNow(timestampFormat) };
         }
 
         // document ID provided in the JSON. Ingest as _id
-        if (!autoGenerateId) {
-          const _id = tempDoc[uniqueIdKey];
+        if (documentIdOptions) {
+          const { idKey, removeIdFromDocs } = documentIdOptions;
+          const documentId = tempDoc[idKey];
           // delete ID key from doc
           if (removeIdFromDocs) {
-            delete tempDoc[uniqueIdKey];
+            delete tempDoc[idKey];
           }
 
           return [
             {
-              index: { _index: indexName, _id },
+              index: { _index: indexName, _id: documentId },
             },
             tempDoc,
           ];
@@ -154,26 +112,28 @@ class DatabaseClient {
 
     const { total, failed, successful } = response;
 
-    console.log(
-      `Ingested ${successful}/${total} documents into "${indexName}"! (Failed: ${failed})`,
-    );
+    return { total, failed, successful };
   }
 
   // Retrieves documents from an index. Uses scroll API internally, so adjust size and window timeout accordingly
   async bulkRetrieveDocuments(
     indexName: string,
-    searchQuery: opensearchtypes.SearchRequest["body"],
+    searchQuery: opensearchtypes.SearchRequest["body"] = { query: { match_all: {} } },
     scrollSize: number = 500,
-    scrollWindowTimeout: string = "1m",
+    scrollWindowTimeout: string = "10m",
   ) {
-    const responseQueue = [];
-    const result = [];
+    const responseQueue: Array<opensearchtypes.ScrollResponse> = [];
+    const result: Array<object> = [];
 
     if (this.dbClient == null) {
       throw new Error("Database client not connected");
     }
 
-    const response = await this.dbClient.search({
+    if (indexName === "") {
+      throw new Error("Database index cannot be an empty string");
+    }
+
+    const response = await this.dbClient.search<opensearchtypes.ScrollResponse>({
       index: indexName,
       scroll: scrollWindowTimeout,
       size: scrollSize,
@@ -182,13 +142,18 @@ class DatabaseClient {
 
     responseQueue.push(response.body);
 
-    while (responseQueue.length) {
+    while (responseQueue.length > 0) {
       const responseBody = responseQueue.shift();
-      const totalDocumentCount = responseBody.hits.total.value;
+
+      if (!responseBody) {
+        return;
+      }
+
+      const totalDocumentCount = responseBody.hits.total["value"];
       const scrollId = responseBody._scroll_id;
 
       responseBody.hits.hits.forEach(function (hit) {
-        const document = structuredClone(hit._source);
+        const document = structuredClone(hit._source) as object;
         document["_id"] = hit._id; // push the internal document ID
         result.push(document);
       });
@@ -202,7 +167,7 @@ class DatabaseClient {
         return result;
       }
 
-      const nextScrollResponse = await this.dbClient.scroll({
+      const nextScrollResponse = await this.dbClient.scroll<opensearchtypes.ScrollResponse>({
         scroll_id: scrollId,
         scroll: scrollWindowTimeout,
       });
@@ -217,4 +182,4 @@ class DatabaseClient {
   }
 }
 
-export const databaseInstance = new DatabaseClient({ useExternalClient: USE_EXTERNAL_OPENSEARCH });
+export default DatabaseClient;

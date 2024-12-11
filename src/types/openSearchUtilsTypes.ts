@@ -3,16 +3,14 @@ import { ALLOWED_DATE_FORMATS_TYPE } from "./dateUtilsTypes";
 
 export interface BulkIngestDocumentsOption {
   indexName: string;
-  zipFileName?: string;
-  autoGenerateId?: boolean;
-  autoGenerateTimestamp?: boolean;
-  uniqueIdOptions?: {
-    uniqueIdKey?: string;
-    removeIdFromDocs?: boolean;
+  inputZipFilename: string;
+  documentIdOptions?: {
+    idKey: string;
+    removeIdFromDocs: boolean;
   };
   generatedTimestampOptions?: {
-    timestampKey?: string;
-    timestampFormat?: ALLOWED_DATE_FORMATS_TYPE;
+    timestampKey: string;
+    timestampFormat: ALLOWED_DATE_FORMATS_TYPE;
   };
 }
 

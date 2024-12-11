@@ -1,10 +1,8 @@
 {
   "indexName": "sample-index",
-  "zipFileName": "sample.zip",
-  "autoGenerateId": false,
-  "autoGenerateTimestamp": false,
-  "uniqueIdOptions": {
-    "uniqueIdKey": "_id",
+  "inputZipFilename": "sample.zip",
+  "documentIdOptions": {
+    "idKey": "_id",
     "removeIdFromDocs": true
   }
 }
