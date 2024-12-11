@@ -32,7 +32,7 @@ class OpenSearchUtils {
     const tempProcessingFilePath = path.join(INPUT_FOLDER_PATH, "temp");
     const zipFilePath = path.join(INPUT_FOLDER_PATH, inputZipFilename);
     console.log(`Extracting documents from ${zipFilePath}...`);
-    const documents = [];
+    const documents: Array<object> = [];
 
     try {
       if (!indexName) {
