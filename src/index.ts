@@ -1,25 +1,91 @@
-import fs from "fs";
+import { select } from "@inquirer/prompts";
+import { promises as fs } from "fs";
 import path from "path";
 
-import { SELECTED_CONFIG, SELECTED_SCRIPT } from "./configSelector";
+import OpenSearchUtils from "./classes/OpensearchUtils";
 import { APP_VERSION } from "./constants";
 
-const CONFIG_PATH = path.join("configs", SELECTED_CONFIG);
+type SelectionType = "CREATE_INDEX" | "BULK_INGEST" | "EXPORT_FROM_INDEX";
 
-function loadConfig() {
-  const { parser, invokeScript, name } = SELECTED_SCRIPT;
-  console.log(`Loading configuration from: ${SELECTED_CONFIG}...`);
-  const options = JSON.parse(fs.readFileSync(CONFIG_PATH, { encoding: "utf-8" }));
-  const transformedOptions = parser(options);
+async function getSelectedScript(): Promise<SelectionType> {
+  const result: SelectionType = await select({
+    message: "Select a script to run:",
+    choices: [
+      {
+        name: "Bulk ingest documents",
+        value: "BULK_INGEST",
+        description: "Ingests json documents from an input folder into an index",
+      },
+      {
+        name: "Create new index",
+        value: "CREATE_INDEX",
+        description: "Create a new index",
+      },
+      {
+        name: "Export documents from index",
+        value: "EXPORT_FROM_INDEX",
+        description: "Exports documents from an index as json files",
+      },
+    ],
+  });
 
-  return { invokeScript, options: transformedOptions, name };
+  return result;
 }
 
-function main() {
+async function getConfig(foldername: string) {
+  const configPath = path.join("configs", foldername);
+  const filenames = await fs.readdir(configPath);
+  const configInput = await select({
+    message: "Select a config:",
+    choices: filenames.map((filename) => {
+      return {
+        name: filename,
+        value: filename,
+      };
+    }),
+  });
+
+  const configFilepath = path.join(configPath, configInput);
+  const result = JSON.parse(await fs.readFile(configFilepath, { encoding: "utf-8" }));
+
+  return result;
+}
+
+async function run() {
   console.log(`Running OpenSearch-Utils version ${APP_VERSION}...`);
-  const { invokeScript, options, name } = loadConfig();
-  console.log(`Running ${name} script...`);
-  invokeScript(options);
+
+  const openSearchUtils = new OpenSearchUtils();
+
+  const selectedScript = await getSelectedScript();
+  let selectedConfig;
+
+  switch (selectedScript) {
+    case "CREATE_INDEX":
+      selectedConfig = await getConfig("create-index");
+      break;
+    case "BULK_INGEST":
+      selectedConfig = await getConfig("bulk-ingest");
+      break;
+    case "EXPORT_FROM_INDEX":
+      selectedConfig = await getConfig("export-from-index");
+      break;
+    default:
+      throw new Error("Unable to load config, please try again");
+  }
+
+  switch (selectedScript) {
+    case "CREATE_INDEX":
+      openSearchUtils.createIndex(selectedConfig);
+      break;
+    case "BULK_INGEST":
+      openSearchUtils.bulkIngestDocuments(selectedConfig);
+      break;
+    case "EXPORT_FROM_INDEX":
+      openSearchUtils.exportFromIndex(selectedConfig);
+      break;
+    default:
+      throw new Error("Unable to run script, please try again");
+  }
 }
 
-main();
+run();

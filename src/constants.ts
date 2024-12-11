@@ -7,6 +7,5 @@ export const USE_EXTERNAL_OPENSEARCH = Boolean(+process.env.USE_EXTERNAL_OPENSEA
 export const EXTERNAL_OPENSEARCH_URL = process.env.EXTERNAL_OPENSEARCH_URL || "";
 
 export const ALLOWED_DATE_FORMATS = ["iso8601-utc", "epoch"] as const;
-export type ALLOWED_DATE_FORMATS_TYPE = (typeof ALLOWED_DATE_FORMATS)[number];
 
 export const DEFAULT_DATE_FORMAT = ALLOWED_DATE_FORMATS[0];

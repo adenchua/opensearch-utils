@@ -1,4 +1,4 @@
-import { Client } from "@opensearch-project/opensearch";
+import { Client, opensearchtypes } from "@opensearch-project/opensearch";
 
 import {
   DEFAULT_DATE_FORMAT,
@@ -9,20 +9,21 @@ import {
   USE_EXTERNAL_OPENSEARCH,
 } from "../constants";
 import { getDateNow } from "../utils/dateUtils";
+import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
 
 class DatabaseClient {
-  #dbClient = null;
-  #databaseURL = "";
+  private dbClient: Client | null = null;
+  private databaseURL: string = "";
 
   constructor({ useExternalClient = false }) {
     const openSearchURL = this.#getOpenSearchURL(useExternalClient);
     const dbClient = this.#getOpenSearchClient(openSearchURL);
-    this.#dbClient = dbClient;
+    this.dbClient = dbClient;
     this.#logConnectionStatus();
   }
 
   async #logConnectionStatus() {
-    console.info(`Connecting to database URL: ${this.#databaseURL}...`);
+    console.info(`Connecting to database URL: ${this.databaseURL}...`);
   }
 
   #getOpenSearchURL(useExternalClient) {
@@ -33,7 +34,7 @@ class DatabaseClient {
       result = `https://localhost:${OPENSEARCH_PORT}`;
     }
 
-    this.#databaseURL = result;
+    this.databaseURL = result;
     return result;
   }
 
@@ -58,17 +59,14 @@ class DatabaseClient {
     );
   }
 
-  /**
-   * Pings OpenSearch database client. Returns true if connection is established and open, false otherwise
-   * @returns {Promise<boolean>} connection to the database
-   */
-  async ping() {
-    if (this.#dbClient == null) {
+  // Pings OpenSearch database client. Returns true if connection is established and open, false otherwise
+  async ping(): Promise<boolean> {
+    if (this.dbClient == null) {
       return false;
     }
 
     try {
-      const pingResponse = await this.#dbClient.ping();
+      const pingResponse = await this.dbClient.ping();
       return pingResponse.statusCode === 200;
     } catch (error) {
       console.error(error);
@@ -76,17 +74,16 @@ class DatabaseClient {
     }
   }
 
-  /**
-   * Creates a new index in OpenSearch
-   * @param {string} indexName name of the index to be created
-   * @param {object} indexSettings index settings object containing settings, mappings and aliases
-   */
-  async addIndex(indexName, indexSettings) {
-    if (this.#dbClient == null) {
+  // Creates a new index in OpenSearch
+  async addIndex(
+    indexName: string,
+    indexSettings: opensearchtypes.IndicesPutTemplateRequest["body"],
+  ): Promise<void> {
+    if (this.dbClient == null) {
       throw new Error("Database client not connected");
     }
 
-    await this.#dbClient.indices.create({
+    await this.dbClient.indices.create({
       index: indexName,
       body: indexSettings,
     });
@@ -94,14 +91,21 @@ class DatabaseClient {
     console.log(`Index "${indexName}" created successfully!`);
   }
 
-  /**
-   * Bulk ingests documents into an index
-   * @param {string} indexName name of the index to ingest documents
-   * @param {Array<T>} documents list of objects to be ingested
-   * @param {string} uniqueIdOptions options for document unique ID
-   * @param {string} generatedTimestampOptions options for generated ingestion timestamp
-   */
-  async bulkIngestDocuments(indexName, documents, uniqueIdOptions, generatedTimestampOptions) {
+  // Bulk ingests documents into an index
+  async bulkIngestDocuments<T>(
+    indexName: string,
+    documents: Array<T>,
+    uniqueIdOptions: {
+      autoGenerateId: boolean;
+      uniqueIdKey: string;
+      removeIdFromDocs: boolean;
+    },
+    generatedTimestampOptions: {
+      autoGenerateTimestamp: boolean;
+      timestampKey: string;
+      timestampFormat: ALLOWED_DATE_FORMATS_TYPE;
+    },
+  ) {
     const { autoGenerateId, uniqueIdKey, removeIdFromDocs = false } = uniqueIdOptions;
     const {
       autoGenerateTimestamp,
@@ -109,11 +113,11 @@ class DatabaseClient {
       timestampFormat = DEFAULT_DATE_FORMAT,
     } = generatedTimestampOptions;
 
-    if (this.#dbClient == null) {
+    if (this.dbClient == null) {
       throw new Error("Database client not connected");
     }
 
-    const response = await this.#dbClient.helpers.bulk({
+    const response = await this.dbClient.helpers.bulk({
       datasource: documents,
       onDocument(document) {
         let tempDoc = structuredClone(document);
@@ -155,28 +159,21 @@ class DatabaseClient {
     );
   }
 
-  /**
-   * Retrieves documents from an index. Uses scroll API internally, so adjust size and window timeout accordingly
-   * @param {string} indexName database index to retrieve documents from
-   * @param {object} searchQuery OpenSearch's search query body. Defaults to match all query
-   * @param {number} scrollSize OpenSearch's scroll size window. Defaults to 500.
-   * @param {enum} scrollWindowTimeout OpenSearch's scroll window timeout. Defaults to '1m' (1 minute). Increase this parameter for larger scroll sizes
-   * @returns {array<T>} a list of documents from the index
-   */
+  // Retrieves documents from an index. Uses scroll API internally, so adjust size and window timeout accordingly
   async bulkRetrieveDocuments(
-    indexName,
-    searchQuery = { query: { match_all: {} } },
-    scrollSize = 500,
-    scrollWindowTimeout = "1m",
+    indexName: string,
+    searchQuery: opensearchtypes.SearchRequest["body"],
+    scrollSize: number = 500,
+    scrollWindowTimeout: string = "1m",
   ) {
     const responseQueue = [];
     const result = [];
 
-    if (this.#dbClient == null) {
+    if (this.dbClient == null) {
       throw new Error("Database client not connected");
     }
 
-    const response = await this.#dbClient.search({
+    const response = await this.dbClient.search({
       index: indexName,
       scroll: scrollWindowTimeout,
       size: scrollSize,
@@ -199,12 +196,13 @@ class DatabaseClient {
       // all documents obtained, return to client
       if (totalDocumentCount === result.length) {
         console.log(`Retrieved all documents from ${indexName}!`);
-        await this.#dbClient.clearScroll({
+        await this.dbClient.clearScroll({
           scroll_id: scrollId,
         }); // closes the scroll context, do not wait until timeout
         return result;
       }
-      const nextScrollResponse = await this.#dbClient.scroll({
+
+      const nextScrollResponse = await this.dbClient.scroll({
         scroll_id: scrollId,
         scroll: scrollWindowTimeout,
       });

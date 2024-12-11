@@ -1,4 +1,5 @@
-import { ALLOWED_DATE_FORMATS_TYPE, DEFAULT_DATE_FORMAT } from "../constants";
+import { DEFAULT_DATE_FORMAT } from "../constants";
+import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
 
 // Returns the current date in various formats
 export function getDateNow(
