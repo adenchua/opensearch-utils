@@ -4,10 +4,12 @@ Unlock the full potential of your OpenSearch database with our Swiss Army-like t
 
 ## First-time setup
 
-Pre-requisite: This repository runs on `>= node 18` minimally. To install the latest `node.js`, click [here](https://nodejs.org/en/download/prebuilt-installer)
+Pre-requisite: This repository runs on `>= node 20` minimally. To install the latest `node.js`, click [here](https://nodejs.org/en/download/prebuilt-installer)
 
 1. Install necessary dependencies with `npm install`
+
 2. Create a `.env` file at the root of this repository. Copy the content from `.env.template` and fill up the values
+
 3. There are two main ways to connect to an OpenSearch database: [set up locally](#setup-opensearch-database-locally) or [connect to an external database](#connecting-to-an-external-opensearch-database)
 
 ## Setup OpenSearch database locally
@@ -27,13 +29,14 @@ sysctl -w vm.max_map_count=262144
 
 Configure the following environment keys in `.env` file:
 
-| key                        | explanation                                                                                                                                                                                                                                                                                                                                                                                        |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| OPENSEARCH_VERSION         | _opensearchproject/opensearch_ version to use from Docker Hub. Use "latest" to pull the latest opensearch image from docker hub, or specify a version e.g. "2.17.0"                                                                                                                                                                                                                                |
-| OPENSEARCH_DATABASE_PORT   | port number to host the opensearch database                                                                                                                                                                                                                                                                                                                                                        |
-| OPENSEARCH_DASHBOARDS_PORT | port number to host opensearch dashboards                                                                                                                                                                                                                                                                                                                                                          |
-| OPENSEARCH_USERNAME        | username used to login to opensearch. Specify "admin" if you are setting a small development database for yourself                                                                                                                                                                                                                                                                                 |
-| OPENSEARCH_PASSWORD        | password used to login to opensearch. From OpenSearch 2.12.0 onwards, the OpenSearch Security Plugin a change that requires an initial password for 'admin' user. Minimum 8 character password and must contain at least one uppercase letter, one lowercase letter, one digit, and one special character that is strong. Password strength can be tested [here](https://lowe.github.io/tryzxcvbn) |
+<!-- prettier-ignore -->
+| key| explanation |
+| --- | --- |
+| OPENSEARCH_VERSION | _opensearchproject/opensearch_ version to use from Docker Hub. Use "latest" to pull the latest opensearch image from docker hub, or specify a version e.g. "2.17.0" |
+| OPENSEARCH_DATABASE_PORT   | port number to host the opensearch database |
+| OPENSEARCH_DASHBOARDS_PORT | port number to host opensearch dashboards |
+| OPENSEARCH_USERNAME | username used to login to opensearch. Specify "admin" if you are setting a small development database for yourself |
+| OPENSEARCH_PASSWORD | password used to login to opensearch. From OpenSearch 2.12.0 onwards, the OpenSearch Security Plugin a change that requires an initial password for 'admin' user. Minimum 8 character password and must contain at least one uppercase letter, one lowercase letter, one digit, and one special character that is strong. Password strength can be tested [here](https://lowe.github.io/tryzxcvbn) |
 
 After setting up the required environment keys, run the following step in your terminal:
 
@@ -45,18 +48,16 @@ This should start up an OpenSearch database at `https://localhost:<OPENSEARCH_DA
 
 Configure the following environment keys in `.env` file:
 
-| key                     | explanation                                           |
-| ----------------------- | ----------------------------------------------------- |
-| OPENSEARCH_USERNAME     | username used to login to opensearch                  |
-| OPENSEARCH_PASSWORD     | password used to login to opensearch                  |
-| USE_EXTERNAL_OPENSEARCH | Change to option 1 to connect to an external database |
-| EXTERNAL_OPENSEARCH_URL | URL of the external opensearch database               |
+<!-- prettier-ignore -->
+| key | exlanation  |
+| --- | --- |
+| OPENSEARCH_USERNAME | username used to login to opensearch. Specify "admin" if you are setting a small development database for yourself |
+| OPENSEARCH_PASSWORD | password used to login to opensearch. From OpenSearch 2.12.0 onwards, the OpenSearch Security Plugin a change that requires an initial password for 'admin' user. Minimum 8 character password and must contain at least one uppercase letter, one lowercase letter, one digit, and one special character that is strong. Password strength can be tested [here](https://lowe.github.io/tryzxcvbn) |
+| PRIMARY_OPENSEARCH_URL | URL of the external opensearch database to connect to. If you want to connect to the local database, set this to `https://localhost:<OPENSEARCH_DATABASE_PORT>` |
 
 ## Using the scripts
 
 Before running any script, create the config `json` file in `/configs` folder. The content of the `json` is described in the sections below.
-
-After configuring the script, modify the `/src/configSelector.js` file and select the config and the script to use.
 
 Run `npm run start` and it should automatically start up the script
 
@@ -66,11 +67,11 @@ Creates an index in the database.
 
 ```json
 {
-  "indexName": "sample-index", // create an index with this index name
-  "shardCount": 1, // (optional) index shard count. Defaults to 1
-  "replicaCount": 1, // (optional) index replica count. Defaults to 1
-  "mappings": {}, // (optional) OpenSearch index mapping. Defaults an an empty object (dynamic mapping)
-  "aliases": {}, // (optional) OpenSearch index aliases. Defaults to an empty object (no alias)
+"indexName": "sample-index", // create an index with this index name
+"shardCount": 1, // (optional) index shard count. Defaults to 1
+"replicaCount": 1, // (optional) index replica count. Defaults to 1
+"mappings": {}, // (optional) OpenSearch index mapping. Defaults an an empty object (dynamic mapping)
+"aliases": {}, // (optional) OpenSearch index aliases. Defaults to an empty object (no alias)
 };
 ```
 
@@ -81,15 +82,13 @@ Takes in a zipped folder (`./input/bulk-ingest/xxx.zip`) of json files and inges
 ```json
 {
   "indexName": "sample-index", // ingests the jsons to this index name
-  "zipFileName": "sample.zip", // name of the zipped folder to extract json files from. stored in /input/bulk-ingest/*
-  "autoGenerateId": true, // (optional) boolean flag to use OpenSearch's internal ID generation as _id. When this is set to false, uniqueIdOptions must be provided. Defaults to true.
-  "autoGenerateTimestamp": false, // (optional) boolean flag to generate an additional ingestion timestamp field. When this is set to true, you can modify the generateTimestampOptions for finer control of the new field.
+  "inputZipFilename": "sample.zip", // name of the zipped folder to extract json files from. stored in /input/bulk-ingest/*
   "uniqueIdOptions": {
-    "uniqueIdKey": "id", // When "autoGenerateId" is set to false, this value must be provided. Denotes the primary key field of the document and set that field value to _id in OpenSearch.
-    "removeIdFromDocs": false // (optional) deletes the field denoted by "uniqueIdKey" in the document before ingestion. Defaults to false
+    "uniqueIdKey": "id", // When "uniqueIdOptions" is defined, this value must be provided. Denotes the primary key field of the document and set that field value to _id in OpenSearch.
+    "removeIdFromDocs": true // (optional) deletes the field denoted by "uniqueIdKey" in the document before ingestion. Defaults to true
   },
   "generatedTimestampOptions": {
-    "timestampKey": "@timestamp", // (optional) When "autoGenerateTimestamp" is set to true, you may update this value. Denotes the new field to be added to the document during ingestion. Defaults to "@timestamp"
+    "timestampKey": "@timestamp", // (optional) Denotes the new field to be added to the document during ingestion. Defaults to "@timestamp"
     "timestampFormat": "iso8601-utc" // (optional) timestamp format of the generated timestamp. Permitted values only. Defaults to "iso8601-utc"
   }
 }
