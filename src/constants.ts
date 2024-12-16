@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.1.0";
+export const APP_VERSION = "1.2.0";
 
 export const OPENSEARCH_USERNAME = process.env.OPENSEARCH_USERNAME || "";
 export const OPENSEARCH_PASSWORD = process.env.OPENSEARCH_PASSWORD || "";

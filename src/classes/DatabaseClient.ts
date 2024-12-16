@@ -4,14 +4,18 @@ import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
 import { getDateNow } from "../utils/dateUtils";
 
 class DatabaseClient {
-  private dbClient: Client | null = null;
+  private dbClient: Client;
 
   constructor(databaseURL: string, username: string, password: string) {
-    const dbClient = this.#getBasicAuthOpenSearchClient(databaseURL, username, password);
+    const dbClient = this.getBasicAuthOpenSearchClient(databaseURL, username, password);
     this.dbClient = dbClient;
   }
 
-  #getBasicAuthOpenSearchClient(openSearchURL: string, username: string, password: string) {
+  private getBasicAuthOpenSearchClient(
+    openSearchURL: string,
+    username: string,
+    password: string,
+  ): Client {
     return new Client({
       node: openSearchURL,
       auth: {
@@ -26,10 +30,6 @@ class DatabaseClient {
 
   // Pings OpenSearch database client. Returns true if connection is established and open, false otherwise
   async ping(): Promise<boolean> {
-    if (this.dbClient == null) {
-      return false;
-    }
-
     const pingResponse = await this.dbClient.ping();
     return pingResponse.statusCode === 200;
   }
@@ -39,10 +39,6 @@ class DatabaseClient {
     indexName: string,
     indexSettings: opensearchtypes.IndicesPutTemplateRequest["body"],
   ): Promise<unknown> {
-    if (this.dbClient == null) {
-      throw new Error("Database client not connected");
-    }
-
     if (indexName === "") {
       throw new Error("Database index name cannot be an empty string");
     }
@@ -68,10 +64,6 @@ class DatabaseClient {
       timestampFormat: ALLOWED_DATE_FORMATS_TYPE;
     },
   ): Promise<{ total: number; failed: number; successful: number }> {
-    if (this.dbClient == null) {
-      throw new Error("Database client not connected");
-    }
-
     const response = await this.dbClient.helpers.bulk({
       datasource: documents,
       onDocument(document) {
@@ -125,10 +117,6 @@ class DatabaseClient {
     const responseQueue: Array<opensearchtypes.ScrollResponse> = [];
     const result: Array<object> = [];
 
-    if (this.dbClient == null) {
-      throw new Error("Database client not connected");
-    }
-
     if (indexName === "") {
       throw new Error("Database index cannot be an empty string");
     }
@@ -179,6 +167,20 @@ class DatabaseClient {
         `Retrieved ${result.length}/${totalDocumentCount} documents from ${indexName}...`,
       );
     }
+  }
+
+  async fetchIndexMapping(
+    index: string,
+  ): Promise<Record<string, { mappings: opensearchtypes.MappingPropertyBase }>> {
+    if (index === "") {
+      throw new Error("Database index name cannot be an empty string");
+    }
+
+    const response = await this.dbClient.indices.getMapping({
+      index,
+    });
+
+    return response.body;
   }
 }
 

@@ -8,5 +8,6 @@
         "type": "integer"
       }
     }
-  }
+  },
+  "aliases": {}
 }

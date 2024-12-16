@@ -1,6 +1,0 @@
-{
-  "indexName": "sample-index",
-  "scrollSize": 1000,
-  "scrollWindowTimeout": "1m",
-  "outputFileName": "sample-output"
-}

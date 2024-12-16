@@ -4,5 +4,9 @@
   "documentIdOptions": {
     "idKey": "_id",
     "removeIdFromDocs": true
+  },
+  "generatedTimestampOptions": {
+    "timestampKey": "@timestamp",
+    "timestampFormat": "iso8601-utc"
   }
 }

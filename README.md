@@ -94,9 +94,9 @@ Takes in a zipped folder (`./input/bulk-ingest/xxx.zip`) of json files and inges
 }
 ```
 
-### (Script) Extract From Index
+### (Script) Export From Index
 
-Extracts all documents from an index and saves each document as a json. Zip file will be generated under `./output/-export-from-index/YYYY-MM-dd/*`
+Extracts all documents from an index and saves each document as a json. Zip file will be generated under `./output/export-from-index/YYYY-MM-dd/*`
 
 ```json
 {
@@ -104,6 +104,17 @@ Extracts all documents from an index and saves each document as a json. Zip file
   "searchQuery": { "query": { "match_all": {} } }, // (optional) OpenSearch search query to filter results for extraction. Defaults to match everything
   "scrollSize": 500, // (optional) scroll size of each retrieval from the database. Defaults to 500
   "scrollWindowTimeout": "1m", // (optional) scroll window timeout of OpenSearch's Scroll API. Defaults to "1m". For larger scroll sizes, you may want to increase this timeout window
-  "outputFileName": "sample-index-qwdq-213-ewqeqw-dqw" // (optional) output zip file name. Defaults to <INDEX_NAME>-<UUID> if not provided
+  "outputFilename": "sample-index-qwdq-213-ewqeqw-dqw" // (optional) output zip file name. Defaults to <INDEX_NAME>-<UUID> if not provided
+}
+```
+
+### (Script) Export Mapping from Indices
+
+Extracts mappings from a list of provided indices and saves each mapping to a json file. A zipped file containing all the documents will be generated under `./output/export-from-index/*`
+
+```json
+{
+  "indices": ["sample-index"], // list of database indices to extract documents from
+  "outputFilename": "sample-output" // (optional) output zip file name. Defaults to <UUID> if not provided
 }
 ```

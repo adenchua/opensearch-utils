@@ -5,20 +5,52 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
 import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../constants";
+import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
 import {
-  BulkIngestDocumentsOption,
-  CreateIndexOption,
-  ExportFromIndexOptions,
-} from "../types/OpenSearchUtilsTypes";
-import { getTodayDatePrettyFormat } from "../utils/dateUtils";
-import { removeDir, writeDocumentToDir, zipFolder } from "../utils/folderUtils";
+  getOutputFolderPath,
+  removeDir,
+  writeDocumentToDir,
+  zipFolder,
+} from "../utils/folderUtils";
 import DatabaseClient from "./DatabaseClient";
 
-const dateToday = getTodayDatePrettyFormat();
-const OUTPUT_PATH = path.join("output", "export-from-index", dateToday);
 const INPUT_FOLDER_PATH = path.join("input", "bulk-ingest");
 
-class OpenSearchUtils {
+interface BulkIngestDocumentsOption {
+  indexName: string;
+  inputZipFilename: string;
+  documentIdOptions?: {
+    idKey: string;
+    removeIdFromDocs: boolean;
+  };
+  generatedTimestampOptions?: {
+    timestampKey: string;
+    timestampFormat: ALLOWED_DATE_FORMATS_TYPE;
+  };
+}
+
+interface CreateIndexOption {
+  indexName: string;
+  shardCount?: number;
+  replicaCount?: number;
+  mappings?: opensearchtypes.MappingTypeMapping;
+  aliases?: { [key: string]: object };
+}
+
+interface ExportFromIndexOptions {
+  indexName: string;
+  searchQuery?: opensearchtypes.SearchRequest["body"];
+  scrollSize?: number;
+  scrollWindowTimeout?: string;
+  outputFilename?: string;
+}
+
+interface ExportMappingFromIndicesOptions {
+  indices: string[];
+  outputFilename?: string;
+}
+
+class ScriptRunner {
   private databaseInstance: DatabaseClient;
 
   constructor(databaseInstance: DatabaseClient) {
@@ -66,9 +98,9 @@ class OpenSearchUtils {
 
       await decompress(zipFilePath, tempProcessingFilePath);
 
-      const fileNames = await fs.readdir(tempProcessingFilePath);
-      for (const fileName of fileNames) {
-        const filepath = path.join(tempProcessingFilePath, fileName);
+      const filenames = await fs.readdir(tempProcessingFilePath);
+      for (const filename of filenames) {
+        const filepath = path.join(tempProcessingFilePath, filename);
         const document = JSON.parse(await fs.readFile(filepath, { encoding: "utf-8" }));
         documents.push(document);
       }
@@ -141,13 +173,18 @@ class OpenSearchUtils {
       searchQuery = { query: { match_all: {} } },
       scrollSize = 500,
       scrollWindowTimeout = "1m",
-      outputFileName,
+      outputFilename,
     } = options;
-    const fileName = outputFileName || `${indexName}-${uuidv4()}`;
-    const outputFullPath = path.join(OUTPUT_PATH, fileName);
+
+    const filename = outputFilename || `${indexName}-${uuidv4()}`;
+    const outputFolderPath = getOutputFolderPath("export-from-index");
+    const outputFullPath = path.join(outputFolderPath, filename);
+
     if (fsSync.existsSync(`${outputFullPath}.zip`)) {
-      throw new Error("output file exists, please change the outputFileName");
+      throw new Error("output file exists, please change the outputFilename");
     }
+
+    console.log("Retrieving the documents, this may take awhile...");
 
     const documents = await this.databaseInstance.bulkRetrieveDocuments(
       indexName,
@@ -171,11 +208,34 @@ class OpenSearchUtils {
     }
 
     await zipFolder(outputFullPath, outputFullPath);
-    removeDir(outputFullPath);
+    removeDir(outputFullPath); // remove the unzipped folder
     console.log(
       `Successfully exported data from index ${indexName}! File stored at: ${outputFullPath}.zip`,
     );
   }
+
+  async exportMappingFromIndices(options: ExportMappingFromIndicesOptions): Promise<void> {
+    const { indices, outputFilename } = options;
+
+    const filename = outputFilename || uuidv4();
+    const outputFolderPath = getOutputFolderPath("export-index-mapping");
+    const outputFullPath = path.join(outputFolderPath, filename);
+
+    if (fsSync.existsSync(`${outputFullPath}.zip`)) {
+      throw new Error("output file exists, please change the outputFilename");
+    }
+
+    for (const index of indices) {
+      const response = await this.databaseInstance.fetchIndexMapping(index);
+      const mapping = response[index].mappings;
+      await writeDocumentToDir(outputFullPath, mapping, index);
+    }
+
+    await zipFolder(outputFullPath, outputFullPath);
+    removeDir(outputFullPath);
+
+    console.log(`Successfully exported mappings! File stored at: ${outputFullPath}.zip`);
+  }
 }
 
-export default OpenSearchUtils;
+export default ScriptRunner;

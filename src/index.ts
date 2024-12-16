@@ -3,13 +3,18 @@ import { promises as fs } from "fs";
 import path from "path";
 
 import DatabaseClient from "./classes/DatabaseClient";
-import OpenSearchUtils from "./classes/OpenSearchUtils";
+import ScriptRunner from "./classes/ScriptRunner";
 import { APP_VERSION, OPENSEARCH_PASSWORD, OPENSEARCH_URL, OPENSEARCH_USERNAME } from "./constants";
 
-type SelectionType = "CREATE_INDEX" | "BULK_INGEST" | "EXPORT_FROM_INDEX";
+type ScriptSelectionType =
+  | "CREATE_INDEX"
+  | "BULK_INGEST"
+  | "EXPORT_FROM_INDEX"
+  | "EXPORT_INDEX_MAPPING";
 
-async function getSelectedScript(): Promise<SelectionType> {
-  const result: SelectionType = await select({
+/** Prompts the user to select a script */
+async function runScriptSelectionPrompt(): Promise<ScriptSelectionType> {
+  const result: ScriptSelectionType = await select({
     message: "Select a script to run:",
     choices: [
       {
@@ -27,13 +32,20 @@ async function getSelectedScript(): Promise<SelectionType> {
         value: "EXPORT_FROM_INDEX",
         description: "Exports documents from an index as json files",
       },
+      {
+        name: "Extract indices mapping",
+        value: "EXPORT_INDEX_MAPPING",
+        description:
+          "Exports mappings from a list of indices and save them as individual json objects",
+      },
     ],
   });
 
   return result;
 }
 
-async function getConfig(foldername: string) {
+/** Prompt the user to select a config for a given script */
+async function runConfigSelectionPrompt(foldername: string) {
   const configPath = path.join("configs", foldername);
   const filenames = await fs.readdir(configPath);
   const configInput = await select({
@@ -68,37 +80,30 @@ async function run() {
     console.log("Connected to database succesfully!");
   }
 
-  const openSearchUtils = new OpenSearchUtils(databaseClient);
+  const scriptRunner = new ScriptRunner(databaseClient);
+  const selectedScript = await runScriptSelectionPrompt();
 
-  const selectedScript = await getSelectedScript();
   let selectedConfig;
 
   switch (selectedScript) {
     case "CREATE_INDEX":
-      selectedConfig = await getConfig("create-index");
+      selectedConfig = await runConfigSelectionPrompt("create-index");
+      scriptRunner.createIndex(selectedConfig);
       break;
     case "BULK_INGEST":
-      selectedConfig = await getConfig("bulk-ingest");
+      selectedConfig = await runConfigSelectionPrompt("bulk-ingest");
+      scriptRunner.bulkIngestDocuments(selectedConfig);
       break;
     case "EXPORT_FROM_INDEX":
-      selectedConfig = await getConfig("export-from-index");
+      selectedConfig = await runConfigSelectionPrompt("export-from-index");
+      scriptRunner.exportFromIndex(selectedConfig);
+      break;
+    case "EXPORT_INDEX_MAPPING":
+      selectedConfig = await runConfigSelectionPrompt("export-mapping-from-indices");
+      scriptRunner.exportMappingFromIndices(selectedConfig);
       break;
     default:
       throw new Error("Unable to load config, please try again");
-  }
-
-  switch (selectedScript) {
-    case "CREATE_INDEX":
-      openSearchUtils.createIndex(selectedConfig);
-      break;
-    case "BULK_INGEST":
-      openSearchUtils.bulkIngestDocuments(selectedConfig);
-      break;
-    case "EXPORT_FROM_INDEX":
-      openSearchUtils.exportFromIndex(selectedConfig);
-      break;
-    default:
-      throw new Error("Unable to run script, please try again");
   }
 }
 
