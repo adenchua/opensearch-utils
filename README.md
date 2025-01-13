@@ -71,6 +71,18 @@ Creates an index in the database.
 "shardCount": 1, // (optional) index shard count. Defaults to 1
 "replicaCount": 1, // (optional) index replica count. Defaults to 1
 "mappings": {}, // (optional) OpenSearch index mapping. Defaults an an empty object (dynamic mapping)
+"maxResultWindow": 10000, // (optional) max result size + from. Defaults to 10,000
+"refreshInterval": "1s", // (optional) index refresh interval. Defaults to "1s" (1 second)
+"analysis": {
+  "analyzer": {
+    "html_strip_analyzer": {
+      "type": "custom",
+      "char_filter": ["html_strip"],
+      "tokenizer": "whitespace",
+      "filter": ["lowercase"]
+    }
+  }
+}, // (optional) index analyzers (https://opensearch.org/docs/latest/analyzers/custom-analyzer/)
 "aliases": {}, // (optional) OpenSearch index aliases. Defaults to an empty object (no alias)
 };
 ```
@@ -83,8 +95,8 @@ Takes in a zipped folder (`./input/bulk-ingest/xxx.zip`) of json files and inges
 {
   "indexName": "sample-index", // ingests the jsons to this index name
   "inputZipFilename": "sample.zip", // name of the zipped folder to extract json files from. stored in /input/bulk-ingest/*
-  "uniqueIdOptions": {
-    "uniqueIdKey": "id", // When "uniqueIdOptions" is defined, this value must be provided. Denotes the primary key field of the document and set that field value to _id in OpenSearch.
+  "documentIdOptions": {
+    "idKey": "id", // When "documentIdOptions" is defined, this value must be provided. Denotes the primary key field of the document and set that field value to _id in OpenSearch.
     "removeIdFromDocs": true // (optional) deletes the field denoted by "uniqueIdKey" in the document before ingestion. Defaults to true
   },
   "generatedTimestampOptions": {
