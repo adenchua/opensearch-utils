@@ -29,10 +29,25 @@ interface BulkIngestDocumentsOption {
   };
 }
 
+interface CustomAnalyzer {
+  type: "custom";
+  tokenizer: string;
+  filter: string[];
+  char_filter?: string;
+}
+
 interface CreateIndexOption {
   indexName: string;
   shardCount?: number;
   replicaCount?: number;
+  maxResultWindow?: number;
+  refreshInterval?: string;
+  search?: {
+    defaultPipeline?: string;
+  };
+  analysis?: {
+    analyzer?: Record<string, CustomAnalyzer>;
+  };
   mappings?: opensearchtypes.MappingTypeMapping;
   aliases?: { [key: string]: object };
 }
@@ -152,11 +167,29 @@ class ScriptRunner {
 
   // Creates an index in OpenSearch database
   async createIndex(options: CreateIndexOption): Promise<void> {
-    const { indexName, shardCount = 1, replicaCount = 1, mappings = {}, aliases = {} } = options;
+    const {
+      indexName,
+      maxResultWindow,
+      refreshInterval,
+      search,
+      analysis,
+      shardCount = 1,
+      replicaCount = 1,
+      mappings = {},
+      aliases = {},
+    } = options;
     const indexSettings: opensearchtypes.IndicesPutTemplateRequest["body"] = {
       settings: {
         number_of_shards: shardCount,
         number_of_replicas: replicaCount,
+        max_result_window: maxResultWindow,
+        refresh_interval: refreshInterval,
+        search: {
+          default_pipeline: search?.defaultPipeline,
+        },
+        analysis: {
+          analyzer: analysis?.analyzer,
+        },
       },
       mappings,
       aliases,

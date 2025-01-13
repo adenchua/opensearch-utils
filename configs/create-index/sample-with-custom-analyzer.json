@@ -11,5 +11,15 @@
   },
   "maxResultWindow": 10000,
   "refreshInterval": "1s",
+  "analysis": {
+    "analyzer": {
+      "html_strip_analyzer": {
+        "type": "custom",
+        "char_filter": ["html_strip"],
+        "tokenizer": "whitespace",
+        "filter": ["lowercase"]
+      }
+    }
+  },
   "aliases": {}
 }
