@@ -1,4 +1,5 @@
 import { Client, opensearchtypes } from "@opensearch-project/opensearch";
+import fs from "fs";
 
 import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
 import { getDateNow } from "../utils/dateUtils";
@@ -6,8 +7,13 @@ import { getDateNow } from "../utils/dateUtils";
 class DatabaseClient {
   private dbClient: Client;
 
-  constructor(databaseURL: string, username: string, password: string) {
-    const dbClient = this.getBasicAuthOpenSearchClient(databaseURL, username, password);
+  constructor(databaseURL: string, username: string, password: string, rootCAfilepath?: string) {
+    const dbClient = this.getBasicAuthOpenSearchClient(
+      databaseURL,
+      username,
+      password,
+      rootCAfilepath,
+    );
     this.dbClient = dbClient;
   }
 
@@ -15,6 +21,7 @@ class DatabaseClient {
     openSearchURL: string,
     username: string,
     password: string,
+    rootCAfilepath?: string,
   ): Client {
     return new Client({
       node: openSearchURL,
@@ -23,6 +30,7 @@ class DatabaseClient {
         password,
       },
       ssl: {
+        ca: rootCAfilepath ? [fs.readFileSync(rootCAfilepath)] : undefined,
         rejectUnauthorized: false,
       },
     });

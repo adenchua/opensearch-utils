@@ -4,7 +4,13 @@ import path from "path";
 
 import DatabaseClient from "./classes/DatabaseClient";
 import ScriptRunner from "./classes/ScriptRunner";
-import { APP_VERSION, OPENSEARCH_PASSWORD, OPENSEARCH_URL, OPENSEARCH_USERNAME } from "./constants";
+import {
+  APP_VERSION,
+  OPENSEARCH_PASSWORD,
+  OPENSEARCH_URL,
+  OPENSEARCH_USERNAME,
+  ROOT_CA_PATH,
+} from "./constants";
 
 type ScriptSelectionType =
   | "CREATE_INDEX"
@@ -71,6 +77,7 @@ async function run() {
     OPENSEARCH_URL,
     OPENSEARCH_USERNAME,
     OPENSEARCH_PASSWORD,
+    ROOT_CA_PATH,
   );
   const connectionSuccessful = await databaseClient.ping();
 
