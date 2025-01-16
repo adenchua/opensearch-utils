@@ -6,10 +6,13 @@ import DatabaseClient from "./classes/DatabaseClient";
 import ScriptRunner from "./classes/ScriptRunner";
 import {
   APP_VERSION,
-  OPENSEARCH_PASSWORD,
-  OPENSEARCH_URL,
-  OPENSEARCH_USERNAME,
-  ROOT_CA_PATH,
+  AUTHENTICATION_METHOD,
+  BASIC_AUTH_FILE_PATH,
+  CERT_AUTH_CERT_FILE_PATH,
+  CERT_AUTH_KEY_FILE_PATH,
+  DATABASE_URL,
+  ROOT_CA_FILE_PATH,
+  VALIDATE_SSL,
 } from "./constants";
 
 type ScriptSelectionType =
@@ -50,6 +53,34 @@ async function runScriptSelectionPrompt(): Promise<ScriptSelectionType> {
   return result;
 }
 
+async function runScript(
+  scriptRunner: ScriptRunner,
+  selectedScript: ScriptSelectionType,
+): Promise<void> {
+  let selectedConfig;
+
+  switch (selectedScript) {
+    case "CREATE_INDEX":
+      selectedConfig = await runConfigSelectionPrompt("create-index");
+      scriptRunner.createIndex(selectedConfig);
+      break;
+    case "BULK_INGEST":
+      selectedConfig = await runConfigSelectionPrompt("bulk-ingest");
+      scriptRunner.bulkIngestDocuments(selectedConfig);
+      break;
+    case "EXPORT_FROM_INDEX":
+      selectedConfig = await runConfigSelectionPrompt("export-from-index");
+      scriptRunner.exportFromIndex(selectedConfig);
+      break;
+    case "EXPORT_INDEX_MAPPING":
+      selectedConfig = await runConfigSelectionPrompt("export-mapping-from-indices");
+      scriptRunner.exportMappingFromIndices(selectedConfig);
+      break;
+    default:
+      throw new Error("Unable to load config, please try again");
+  }
+}
+
 /** Prompt the user to select a config for a given script */
 async function runConfigSelectionPrompt(foldername: string) {
   const configPath = path.join("configs", foldername);
@@ -73,45 +104,27 @@ async function runConfigSelectionPrompt(foldername: string) {
 async function run() {
   console.log(`Running OpenSearch-Utils version ${APP_VERSION}...`);
 
-  const databaseClient = new DatabaseClient(
-    OPENSEARCH_URL,
-    OPENSEARCH_USERNAME,
-    OPENSEARCH_PASSWORD,
-    ROOT_CA_PATH,
-  );
+  const databaseClient = new DatabaseClient({
+    databaseUrl: DATABASE_URL,
+    authenticationMethod: AUTHENTICATION_METHOD as "BASIC_AUTH" | "CERTIFICATE_AUTH",
+    basicAuthFilepath: BASIC_AUTH_FILE_PATH,
+    certFilepath: CERT_AUTH_CERT_FILE_PATH,
+    keyFilepath: CERT_AUTH_KEY_FILE_PATH,
+    rootCAFilepath: ROOT_CA_FILE_PATH,
+    rejectUnauthorized: VALIDATE_SSL,
+  });
+
   const connectionSuccessful = await databaseClient.ping();
 
   if (!connectionSuccessful) {
     throw new Error("Failed to connect to database");
   } else {
-    console.log("Connected to database succesfully!");
+    console.log("Connected to database successfully!");
   }
 
   const scriptRunner = new ScriptRunner(databaseClient);
   const selectedScript = await runScriptSelectionPrompt();
-
-  let selectedConfig;
-
-  switch (selectedScript) {
-    case "CREATE_INDEX":
-      selectedConfig = await runConfigSelectionPrompt("create-index");
-      scriptRunner.createIndex(selectedConfig);
-      break;
-    case "BULK_INGEST":
-      selectedConfig = await runConfigSelectionPrompt("bulk-ingest");
-      scriptRunner.bulkIngestDocuments(selectedConfig);
-      break;
-    case "EXPORT_FROM_INDEX":
-      selectedConfig = await runConfigSelectionPrompt("export-from-index");
-      scriptRunner.exportFromIndex(selectedConfig);
-      break;
-    case "EXPORT_INDEX_MAPPING":
-      selectedConfig = await runConfigSelectionPrompt("export-mapping-from-indices");
-      scriptRunner.exportMappingFromIndices(selectedConfig);
-      break;
-    default:
-      throw new Error("Unable to load config, please try again");
-  }
+  runScript(scriptRunner, selectedScript);
 }
 
 run();

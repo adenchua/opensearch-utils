@@ -1,10 +1,12 @@
-export const APP_VERSION = "1.2.0";
+export const APP_VERSION = "1.3.0";
 
-export const OPENSEARCH_USERNAME = process.env.OPENSEARCH_USERNAME || "";
-export const OPENSEARCH_PASSWORD = process.env.OPENSEARCH_PASSWORD || "";
-export const OPENSEARCH_PORT = process.env.OPENSEARCH_DATABASE_PORT || "9200";
-export const OPENSEARCH_URL = process.env.PRIMARY_OPENSEARCH_URL || "";
-export const ROOT_CA_PATH = process.env.ROOT_CA_PATH || undefined;
+export const DATABASE_URL = process.env.DATABASE_URL || "";
+export const AUTHENTICATION_METHOD = process.env.AUTHENTICATION_METHOD || "BASIC_AUTH";
+export const ROOT_CA_FILE_PATH = process.env.ROOT_CA_FILE_PATH;
+export const BASIC_AUTH_FILE_PATH = process.env.BASIC_AUTH_FILE_PATH;
+export const CERT_AUTH_CERT_FILE_PATH = process.env.CERT_AUTH_CERT_FILE_PATH;
+export const CERT_AUTH_KEY_FILE_PATH = process.env.CERT_AUTH_KEY_FILE_PATH;
+export const VALIDATE_SSL = process.env.VALIDATE_SSL ? !!+process.env.VALIDATE_SSL : false;
 
 export const ALLOWED_DATE_FORMATS = ["iso8601-utc", "epoch"] as const;
 

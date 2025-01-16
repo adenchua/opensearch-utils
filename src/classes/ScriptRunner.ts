@@ -1,4 +1,8 @@
-import { opensearchtypes } from "@opensearch-project/opensearch";
+import { Analyzer } from "@opensearch-project/opensearch/api/_types/_common.analysis.js";
+import {
+  Indices_Create_RequestBody,
+  Search_RequestBody,
+} from "@opensearch-project/opensearch/api/index.js";
 import decompress from "decompress";
 import { promises as fs, default as fsSync } from "fs";
 import path from "path";
@@ -29,13 +33,6 @@ interface BulkIngestDocumentsOption {
   };
 }
 
-interface CustomAnalyzer {
-  type: "custom";
-  tokenizer: string;
-  filter: string[];
-  char_filter?: string;
-}
-
 interface CreateIndexOption {
   indexName: string;
   shardCount?: number;
@@ -46,15 +43,15 @@ interface CreateIndexOption {
     defaultPipeline?: string;
   };
   analysis?: {
-    analyzer?: Record<string, CustomAnalyzer>;
+    analyzer?: Record<string, Analyzer>;
   };
-  mappings?: opensearchtypes.MappingTypeMapping;
+  mappings?: Indices_Create_RequestBody["mappings"];
   aliases?: { [key: string]: object };
 }
 
 interface ExportFromIndexOptions {
   indexName: string;
-  searchQuery?: opensearchtypes.SearchRequest["body"];
+  searchQuery?: Search_RequestBody;
   scrollSize?: number;
   scrollWindowTimeout?: string;
   outputFilename?: string;
@@ -178,7 +175,7 @@ class ScriptRunner {
       mappings = {},
       aliases = {},
     } = options;
-    const indexSettings: opensearchtypes.IndicesPutTemplateRequest["body"] = {
+    const indexSettings: Indices_Create_RequestBody = {
       settings: {
         number_of_shards: shardCount,
         number_of_replicas: replicaCount,

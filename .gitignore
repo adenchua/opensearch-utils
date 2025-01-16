@@ -1,6 +1,7 @@
-/database
-/mappings
-/output
+database
+mappings
+output
+certs
 
 /input/bulk-ingest/*
 !/input/bulk-ingest/PLACEHOLDER.txt

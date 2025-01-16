@@ -1,57 +1,27 @@
-import { Client, opensearchtypes } from "@opensearch-project/opensearch";
-import fs from "fs";
+import { TotalHits } from "@opensearch-project/opensearch/api/_types/_core.search.js";
+import {
+  Indices_Create_RequestBody,
+  Indices_GetMapping_ResponseBody,
+  Search_RequestBody,
+  Search_ResponseBody,
+} from "@opensearch-project/opensearch/api/index.js";
 
 import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
 import { getDateNow } from "../utils/dateUtils";
+import DatabaseAdapter, { Settings } from "./DatabaseAdapter";
 
-class DatabaseClient {
-  private dbClient: Client;
-
-  constructor(databaseURL: string, username: string, password: string, rootCAfilepath?: string) {
-    const dbClient = this.getBasicAuthOpenSearchClient(
-      databaseURL,
-      username,
-      password,
-      rootCAfilepath,
-    );
-    this.dbClient = dbClient;
-  }
-
-  private getBasicAuthOpenSearchClient(
-    openSearchURL: string,
-    username: string,
-    password: string,
-    rootCAfilepath?: string,
-  ): Client {
-    return new Client({
-      node: openSearchURL,
-      auth: {
-        username,
-        password,
-      },
-      ssl: {
-        ca: rootCAfilepath ? [fs.readFileSync(rootCAfilepath)] : undefined,
-        rejectUnauthorized: false,
-      },
-    });
-  }
-
-  // Pings OpenSearch database client. Returns true if connection is established and open, false otherwise
-  async ping(): Promise<boolean> {
-    const pingResponse = await this.dbClient.ping();
-    return pingResponse.statusCode === 200;
+export default class DatabaseClient extends DatabaseAdapter {
+  constructor(settings: Settings) {
+    super(settings);
   }
 
   // Creates a new index in OpenSearch
-  async addIndex(
-    indexName: string,
-    indexSettings: opensearchtypes.IndicesPutTemplateRequest["body"],
-  ): Promise<unknown> {
+  async addIndex(indexName: string, indexSettings: Indices_Create_RequestBody): Promise<unknown> {
     if (indexName === "") {
       throw new Error("Database index name cannot be an empty string");
     }
 
-    const response = await this.dbClient.indices.create({
+    const response = await this.getDatabaseClient().indices.create({
       index: indexName,
       body: indexSettings,
     });
@@ -72,7 +42,7 @@ class DatabaseClient {
       timestampFormat: ALLOWED_DATE_FORMATS_TYPE;
     },
   ): Promise<{ total: number; failed: number; successful: number }> {
-    const response = await this.dbClient.helpers.bulk({
+    const response = await this.getDatabaseClient().helpers.bulk({
       datasource: documents,
       onDocument(document) {
         let tempDoc = structuredClone(document);
@@ -118,18 +88,18 @@ class DatabaseClient {
   // Retrieves documents from an index. Uses scroll API internally, so adjust size and window timeout accordingly
   async bulkRetrieveDocuments(
     indexName: string,
-    searchQuery: opensearchtypes.SearchRequest["body"] = { query: { match_all: {} } },
+    searchQuery: Search_RequestBody = { query: { match_all: {} } },
     scrollSize: number = 500,
     scrollWindowTimeout: string = "10m",
   ) {
-    const responseQueue: Array<opensearchtypes.ScrollResponse> = [];
+    const responseQueue: Array<Search_ResponseBody> = [];
     const result: Array<object> = [];
 
     if (indexName === "") {
       throw new Error("Database index cannot be an empty string");
     }
 
-    const response = await this.dbClient.search<opensearchtypes.ScrollResponse>({
+    const response = await this.getDatabaseClient().search({
       index: indexName,
       scroll: scrollWindowTimeout,
       size: scrollSize,
@@ -145,7 +115,8 @@ class DatabaseClient {
         return;
       }
 
-      const totalDocumentCount = responseBody.hits.total["value"];
+      const totalDocumentHits = responseBody.hits.total as TotalHits;
+      const totalDocumentCount = totalDocumentHits.value;
       const scrollId = responseBody._scroll_id;
 
       responseBody.hits.hits.forEach(function (hit) {
@@ -157,13 +128,13 @@ class DatabaseClient {
       // all documents obtained, return to client
       if (totalDocumentCount === result.length) {
         console.log(`Retrieved all documents from ${indexName}!`);
-        await this.dbClient.clearScroll({
+        await this.getDatabaseClient().clearScroll({
           scroll_id: scrollId,
         }); // closes the scroll context, do not wait until timeout
         return result;
       }
 
-      const nextScrollResponse = await this.dbClient.scroll<opensearchtypes.ScrollResponse>({
+      const nextScrollResponse = await this.getDatabaseClient().scroll({
         scroll_id: scrollId,
         scroll: scrollWindowTimeout,
       });
@@ -177,19 +148,15 @@ class DatabaseClient {
     }
   }
 
-  async fetchIndexMapping(
-    index: string,
-  ): Promise<Record<string, { mappings: opensearchtypes.MappingPropertyBase }>> {
+  async fetchIndexMapping(index: string): Promise<Indices_GetMapping_ResponseBody> {
     if (index === "") {
       throw new Error("Database index name cannot be an empty string");
     }
 
-    const response = await this.dbClient.indices.getMapping({
+    const response = await this.getDatabaseClient().indices.getMapping({
       index,
     });
 
     return response.body;
   }
 }
-
-export default DatabaseClient;

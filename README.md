@@ -4,7 +4,7 @@ Unlock the full potential of your OpenSearch database with our Swiss Army-like t
 
 ## First-time setup
 
-Pre-requisite: This repository runs on `>= node 20` minimally. To install the latest `node.js`, click [here](https://nodejs.org/en/download/prebuilt-installer)
+Pre-requisite: This repository runs on `>= node 22` minimally. To install the latest `node.js`, click [here](https://nodejs.org/en/download/prebuilt-installer)
 
 1. Install necessary dependencies with `npm install`
 
@@ -29,14 +29,10 @@ sysctl -w vm.max_map_count=262144
 
 Configure the following environment keys in `.env` file:
 
-<!-- prettier-ignore -->
-| key| explanation |
-| --- | --- |
-| OPENSEARCH_VERSION | _opensearchproject/opensearch_ version to use from Docker Hub. Use "latest" to pull the latest opensearch image from docker hub, or specify a version e.g. "2.17.0" |
-| OPENSEARCH_DATABASE_PORT   | port number to host the opensearch database |
-| OPENSEARCH_DASHBOARDS_PORT | port number to host opensearch dashboards |
-| OPENSEARCH_USERNAME | username used to login to opensearch. Specify "admin" if you are setting a small development database for yourself |
-| OPENSEARCH_PASSWORD | password used to login to opensearch. From OpenSearch 2.12.0 onwards, the OpenSearch Security Plugin a change that requires an initial password for 'admin' user. Minimum 8 character password and must contain at least one uppercase letter, one lowercase letter, one digit, and one special character that is strong. Password strength can be tested [here](https://lowe.github.io/tryzxcvbn) |
+- `OPENSEARCH_VERSION`
+- `OPENSEARCH_DATABASE_PORT`
+- `OPENSEARCH_DASHBOARDS_PORT`
+- `OPENSEARCH_INITIAL_ADMIN_PASSWORD`
 
 After setting up the required environment keys, run the following step in your terminal:
 
@@ -48,12 +44,13 @@ This should start up an OpenSearch database at `https://localhost:<OPENSEARCH_DA
 
 Configure the following environment keys in `.env` file:
 
-<!-- prettier-ignore -->
-| key | exlanation  |
-| --- | --- |
-| OPENSEARCH_USERNAME | username used to login to opensearch. Specify "admin" if you are setting a small development database for yourself |
-| OPENSEARCH_PASSWORD | password used to login to opensearch. From OpenSearch 2.12.0 onwards, the OpenSearch Security Plugin a change that requires an initial password for 'admin' user. Minimum 8 character password and must contain at least one uppercase letter, one lowercase letter, one digit, and one special character that is strong. Password strength can be tested [here](https://lowe.github.io/tryzxcvbn) |
-| PRIMARY_OPENSEARCH_URL | URL of the external opensearch database to connect to. If you want to connect to the local database, set this to `https://localhost:<OPENSEARCH_DATABASE_PORT>` |
+- `AUTHENTICATION_METHOD`
+- `BASIC_AUTH_FILE_PATH`
+- `CERT_AUTH_CERT_FILE_PATH`
+- `CERT_AUTH_KEY_FILE_PATH`
+- `DATABASE_URL`
+- `ROOT_CA_FILE_PATH`
+- `VALIDATE_SSL`
 
 ## Using the scripts
 
