@@ -2,18 +2,10 @@ import { select } from "@inquirer/prompts";
 import { promises as fs } from "fs";
 import path from "path";
 
-import DatabaseClient from "./classes/DatabaseClient";
+import DatabaseService from "./classes/DatabaseService";
 import ScriptRunner from "./classes/ScriptRunner";
-import {
-  APP_VERSION,
-  AUTHENTICATION_METHOD,
-  BASIC_AUTH_FILE_PATH,
-  CERT_AUTH_CERT_FILE_PATH,
-  CERT_AUTH_KEY_FILE_PATH,
-  DATABASE_URL,
-  ROOT_CA_FILE_PATH,
-  VALIDATE_SSL,
-} from "./constants";
+import { APP_VERSION } from "./constants";
+import { databaseClient } from "./singletons";
 
 type ScriptSelectionType =
   | "CREATE_INDEX"
@@ -104,16 +96,6 @@ async function runConfigSelectionPrompt(foldername: string) {
 async function run() {
   console.log(`Running OpenSearch-Utils version ${APP_VERSION}...`);
 
-  const databaseClient = new DatabaseClient({
-    databaseUrl: DATABASE_URL,
-    authenticationMethod: AUTHENTICATION_METHOD as "BASIC_AUTH" | "CERTIFICATE_AUTH",
-    basicAuthFilepath: BASIC_AUTH_FILE_PATH,
-    certFilepath: CERT_AUTH_CERT_FILE_PATH,
-    keyFilepath: CERT_AUTH_KEY_FILE_PATH,
-    rootCAFilepath: ROOT_CA_FILE_PATH,
-    rejectUnauthorized: VALIDATE_SSL,
-  });
-
   const connectionSuccessful = await databaseClient.ping();
 
   if (!connectionSuccessful) {
@@ -122,7 +104,8 @@ async function run() {
     console.log("Connected to database successfully!");
   }
 
-  const scriptRunner = new ScriptRunner(databaseClient);
+  const databaseService = new DatabaseService(databaseClient);
+  const scriptRunner = new ScriptRunner(databaseService);
   const selectedScript = await runScriptSelectionPrompt();
   runScript(scriptRunner, selectedScript);
 }

@@ -16,7 +16,7 @@ import {
   writeDocumentToDir,
   zipFolder,
 } from "../utils/folderUtils";
-import DatabaseClient from "./DatabaseClient";
+import DatabaseService from "./DatabaseService";
 
 const INPUT_FOLDER_PATH = path.join("input", "bulk-ingest");
 
@@ -62,11 +62,11 @@ interface ExportMappingFromIndicesOptions {
   outputFilename?: string;
 }
 
-class ScriptRunner {
-  private databaseInstance: DatabaseClient;
+export default class ScriptRunner {
+  private databaseService: DatabaseService;
 
-  constructor(databaseInstance: DatabaseClient) {
-    this.databaseInstance = databaseInstance;
+  constructor(databaseService: DatabaseService) {
+    this.databaseService = databaseService;
   }
 
   // Ingests zip file of individual JSON records in the database
@@ -144,7 +144,7 @@ class ScriptRunner {
         }
       }
 
-      const response = await this.databaseInstance.bulkIngestDocuments(
+      const response = await this.databaseService.bulkIngestDocuments(
         indexName,
         documents,
         documentIdOptions,
@@ -192,7 +192,7 @@ class ScriptRunner {
       aliases,
     };
 
-    await this.databaseInstance.addIndex(indexName, indexSettings);
+    await this.databaseService.addIndex(indexName, indexSettings);
     console.log(`Created a new index ${indexName} successfully!`);
   }
 
@@ -216,7 +216,7 @@ class ScriptRunner {
 
     console.log("Retrieving the documents, this may take awhile...");
 
-    const documents = await this.databaseInstance.bulkRetrieveDocuments(
+    const documents = await this.databaseService.bulkRetrieveDocuments(
       indexName,
       searchQuery,
       scrollSize,
@@ -256,7 +256,7 @@ class ScriptRunner {
     }
 
     for (const index of indices) {
-      const response = await this.databaseInstance.fetchIndexMapping(index);
+      const response = await this.databaseService.fetchIndexMapping(index);
       const mapping = response[index].mappings;
       await writeDocumentToDir(outputFullPath, mapping, index);
     }
@@ -267,5 +267,3 @@ class ScriptRunner {
     console.log(`Successfully exported mappings! File stored at: ${outputFullPath}.zip`);
   }
 }
-
-export default ScriptRunner;
