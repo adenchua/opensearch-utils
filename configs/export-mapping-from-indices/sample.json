@@ -1,4 +1,3 @@
 {
-  "indices": ["sample-index"],
-  "outputFilename": "sample-output"
+  "indices": ["sample-index"]
 }

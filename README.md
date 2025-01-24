@@ -112,8 +112,7 @@ Extracts all documents from an index and saves each document as a json. Zip file
   "indexName": "sample-index", // index to extract documents from
   "searchQuery": { "query": { "match_all": {} } }, // (optional) OpenSearch search query to filter results for extraction. Defaults to match everything
   "scrollSize": 500, // (optional) scroll size of each retrieval from the database. Defaults to 500
-  "scrollWindowTimeout": "1m", // (optional) scroll window timeout of OpenSearch's Scroll API. Defaults to "1m". For larger scroll sizes, you may want to increase this timeout window
-  "outputFilename": "sample-index-qwdq-213-ewqeqw-dqw" // (optional) output zip file name. Defaults to <INDEX_NAME>-<UUID> if not provided
+  "scrollWindowTimeout": "1m" // (optional) scroll window timeout of OpenSearch's Scroll API. Defaults to "1m". For larger scroll sizes, you may want to increase this timeout window
 }
 ```
 
@@ -123,7 +122,6 @@ Extracts mappings from a list of provided indices and saves each mapping to a js
 
 ```json
 {
-  "indices": ["sample-index"], // list of database indices to extract documents from
-  "outputFilename": "sample-output" // (optional) output zip file name. Defaults to <UUID> if not provided
+  "indices": ["sample-index"] // list of database indices to extract documents from
 }
 ```

@@ -10,13 +10,10 @@ import { v4 as uuidv4 } from "uuid";
 
 import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../constants";
 import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
-import {
-  getOutputFolderPath,
-  removeDir,
-  writeDocumentToDir,
-  zipFolder,
-} from "../utils/folderUtils";
+import chunkArray from "../utils/chunkUtils";
+import { getOutputFolderPath, removeDir, zipFolder } from "../utils/folderUtils";
 import DatabaseService from "./DatabaseService";
+import FileManager from "./FileManager";
 
 const INPUT_FOLDER_PATH = path.join("input", "bulk-ingest");
 
@@ -54,7 +51,6 @@ interface ExportFromIndexOptions {
   searchQuery?: Search_RequestBody;
   scrollSize?: number;
   scrollWindowTimeout?: string;
-  outputFilename?: string;
 }
 
 interface ExportMappingFromIndicesOptions {
@@ -203,16 +199,11 @@ export default class ScriptRunner {
       searchQuery = { query: { match_all: {} } },
       scrollSize = 500,
       scrollWindowTimeout = "1m",
-      outputFilename,
     } = options;
 
-    const filename = outputFilename || `${indexName}-${uuidv4()}`;
+    const foldername = `${indexName}--${uuidv4()}`;
     const outputFolderPath = getOutputFolderPath("export-from-index");
-    const outputFullPath = path.join(outputFolderPath, filename);
-
-    if (fsSync.existsSync(`${outputFullPath}.zip`)) {
-      throw new Error("output file exists, please change the outputFilename");
-    }
+    const outputFullPath = path.join(outputFolderPath, foldername);
 
     console.log("Retrieving the documents, this may take awhile...");
 
@@ -233,8 +224,21 @@ export default class ScriptRunner {
       throw new Error("Unable to retrieve documents, please try again");
     }
 
-    for (const document of documents) {
-      await writeDocumentToDir(outputFullPath, document);
+    // if folder doesn't exist, create one
+    if (!fsSync.existsSync(outputFullPath)) {
+      await fs.mkdir(outputFullPath, { recursive: true });
+    }
+
+    // each file should contain at most 10,000 items
+    const chunkedDocumentsList = chunkArray(documents, 10_000);
+    let counter = 1;
+    const filename = uuidv4();
+    for (const chunkedDocuments of chunkedDocumentsList) {
+      await FileManager.saveAsJsonLine(
+        chunkedDocuments,
+        path.join(outputFullPath, `${filename}-${counter}.jsonl`),
+      );
+      counter++;
     }
 
     await zipFolder(outputFullPath, outputFullPath);
@@ -245,20 +249,21 @@ export default class ScriptRunner {
   }
 
   async exportMappingFromIndices(options: ExportMappingFromIndicesOptions): Promise<void> {
-    const { indices, outputFilename } = options;
+    const { indices } = options;
 
-    const filename = outputFilename || uuidv4();
+    const filename = uuidv4();
     const outputFolderPath = getOutputFolderPath("export-index-mapping");
     const outputFullPath = path.join(outputFolderPath, filename);
 
-    if (fsSync.existsSync(`${outputFullPath}.zip`)) {
-      throw new Error("output file exists, please change the outputFilename");
+    // if folder doesn't exist, create one
+    if (!fsSync.existsSync(outputFullPath)) {
+      await fs.mkdir(outputFullPath, { recursive: true });
     }
 
     for (const index of indices) {
       const response = await this.databaseService.fetchIndexMapping(index);
       const mapping = response[index].mappings;
-      await writeDocumentToDir(outputFullPath, mapping, index);
+      await FileManager.saveAsJson(mapping, path.join(outputFullPath, `${index}.json`));
     }
 
     await zipFolder(outputFullPath, outputFullPath);
