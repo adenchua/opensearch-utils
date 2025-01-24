@@ -72,7 +72,6 @@ export default class ScriptRunner {
     const tempProcessingFilePath = path.join(INPUT_FOLDER_PATH, "temp");
     const zipFilePath = path.join(INPUT_FOLDER_PATH, inputZipFilename);
     console.log(`Extracting documents from ${zipFilePath}...`);
-    const documents: Array<object> = [];
 
     try {
       if (!indexName) {
@@ -106,11 +105,12 @@ export default class ScriptRunner {
 
       await decompress(zipFilePath, tempProcessingFilePath);
 
+      const documents: Array<object> = [];
       const filenames = await fs.readdir(tempProcessingFilePath);
       for (const filename of filenames) {
         const filepath = path.join(tempProcessingFilePath, filename);
-        const document = JSON.parse(await fs.readFile(filepath, { encoding: "utf-8" }));
-        documents.push(document);
+        const tempDocuments = await FileManager.readJsonLine(filepath);
+        documents.push(...tempDocuments);
       }
 
       console.log(`Extracted ${documents.length} documents. Ingesting to ${indexName}...`);
