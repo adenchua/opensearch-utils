@@ -1,6 +1,6 @@
 # OpenSearch Utils
 
-Unlock the full potential of your OpenSearch database with our Swiss Army-like toolset, designed for developers, data engineers, and database administrators. This versatile toolkit offers a comprehensive suite of features that streamline database management, optimize performance, and enhance your data querying capabilities.
+Designed for developers, data engineers, and database administrators. This toolkit offers useful utilities to manage an opensearch database.
 
 ## First-time setup
 
@@ -64,12 +64,19 @@ Creates an index in the database.
 
 ```json
 {
-"indexName": "sample-index", // create an index with this index name
-"shardCount": 1, // (optional) index shard count. Defaults to 1
-"replicaCount": 1, // (optional) index replica count. Defaults to 1
-"mappings": {}, // (optional) OpenSearch index mapping. Defaults an an empty object (dynamic mapping)
-"maxResultWindow": 10000, // (optional) max result size + from. Defaults to 10,000
-"refreshInterval": "1s", // (optional) index refresh interval. Defaults to "1s" (1 second)
+  // create an index with this index name
+"indexName": "sample-index",
+// (optional) index shard count. Defaults to 1
+"shardCount": 1,
+// (optional) index replica count. Defaults to 1
+"replicaCount": 1,
+ // (optional) OpenSearch index mapping. Defaults an an empty object (dynamic mapping)
+"mappings": {},
+ // (optional) max result size + from. Defaults to 10,000
+"maxResultWindow": 10000,
+// (optional) index refresh interval. Defaults to "1s" (1 second)
+"refreshInterval": "1s",
+// (optional) index analyzers (https://opensearch.org/docs/latest/analyzers/custom-analyzer/)
 "analysis": {
   "analyzer": {
     "html_strip_analyzer": {
@@ -79,8 +86,9 @@ Creates an index in the database.
       "filter": ["lowercase"]
     }
   }
-}, // (optional) index analyzers (https://opensearch.org/docs/latest/analyzers/custom-analyzer/)
-"aliases": {}, // (optional) OpenSearch index aliases. Defaults to an empty object (no alias)
+},
+// (optional) OpenSearch index aliases. Defaults to an empty object (no alias)
+"aliases": {},
 };
 ```
 
@@ -90,15 +98,21 @@ Takes in a zipped folder (`./input/bulk-ingest/xxx.zip`) of json files and inges
 
 ```json
 {
-  "indexName": "sample-index", // ingests the jsons to this index name
-  "inputZipFilename": "sample.zip", // name of the zipped folder to extract json files from. stored in /input/bulk-ingest/*
+  // ingests the jsons to this index name
+  "indexName": "sample-index",
+  // name of the zipped folder to extract json files from. stored in /input/bulk-ingest/*
+  "inputZipFilename": "sample.zip",
   "documentIdOptions": {
-    "idKey": "id", // When "documentIdOptions" is defined, this value must be provided. Denotes the primary key field of the document and set that field value to _id in OpenSearch.
-    "removeIdFromDocs": true // (optional) deletes the field denoted by "uniqueIdKey" in the document before ingestion. Defaults to true
+    // When "documentIdOptions" is defined, this value must be provided. Denotes the primary key field of the document and set that field value to _id in OpenSearch.
+    "idKey": "id",
+    // (optional) deletes the field denoted by "uniqueIdKey" in the document before ingestion. Defaults to true
+    "removeIdFromDocs": true
   },
   "generatedTimestampOptions": {
-    "timestampKey": "@timestamp", // (optional) Denotes the new field to be added to the document during ingestion. Defaults to "@timestamp"
-    "timestampFormat": "iso8601-utc" // (optional) timestamp format of the generated timestamp. Permitted values only. Defaults to "iso8601-utc"
+    // (optional) Denotes the new field to be added to the document during ingestion. Defaults to "@timestamp"
+    "timestampKey": "@timestamp",
+    // (optional) timestamp format of the generated timestamp. Permitted values only. Defaults to "iso8601-utc"
+    "timestampFormat": "iso8601-utc"
   }
 }
 ```
@@ -109,11 +123,14 @@ Extracts all documents from an index and saves each document as a json. Zip file
 
 ```json
 {
-  "indexName": "sample-index", // index to extract documents from
-  "searchQuery": { "query": { "match_all": {} } }, // (optional) OpenSearch search query to filter results for extraction. Defaults to match everything
-  "scrollSize": 500, // (optional) scroll size of each retrieval from the database. Defaults to 500
-  "scrollWindowTimeout": "1m", // (optional) scroll window timeout of OpenSearch's Scroll API. Defaults to "1m". For larger scroll sizes, you may want to increase this timeout window
-  "outputFilename": "sample-index-qwdq-213-ewqeqw-dqw" // (optional) output zip file name. Defaults to <INDEX_NAME>-<UUID> if not provided
+  // index to extract documents from
+  "indexName": "sample-index",
+  // (optional) OpenSearch search query to filter results for extraction. Defaults to match everything
+  "searchQuery": { "query": { "match_all": {} } },
+  // (optional) scroll size of each retrieval from the database. Defaults to 500
+  "scrollSize": 500,
+  // (optional) scroll window timeout of OpenSearch's Scroll API. Defaults to "1m". For larger scroll sizes, you may want to increase this timeout window
+  "scrollWindowTimeout": "1m"
 }
 ```
 
@@ -123,7 +140,7 @@ Extracts mappings from a list of provided indices and saves each mapping to a js
 
 ```json
 {
-  "indices": ["sample-index"], // list of database indices to extract documents from
-  "outputFilename": "sample-output" // (optional) output zip file name. Defaults to <UUID> if not provided
+  // list of database indices to extract documents from
+  "indices": ["sample-index"]
 }
 ```

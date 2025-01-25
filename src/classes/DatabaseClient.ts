@@ -1,162 +1,109 @@
-import { TotalHits } from "@opensearch-project/opensearch/api/_types/_core.search.js";
-import {
-  Indices_Create_RequestBody,
-  Indices_GetMapping_ResponseBody,
-  Search_RequestBody,
-  Search_ResponseBody,
-} from "@opensearch-project/opensearch/api/index.js";
+import { Client } from "@opensearch-project/opensearch";
+import fs from "fs";
 
-import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
-import { getDateNow } from "../utils/dateUtils";
-import DatabaseAdapter, { Settings } from "./DatabaseAdapter";
+export interface Settings {
+  authenticationMethod: "CERTIFICATE_AUTH" | "BASIC_AUTH";
+  databaseUrl: string;
+  basicAuthFilepath?: string;
+  rootCAFilepath?: string;
+  certFilepath?: string;
+  keyFilepath?: string;
+  rejectUnauthorized?: boolean;
+}
 
-export default class DatabaseClient extends DatabaseAdapter {
+export default class DatabaseClient {
+  private databaseClient: Client;
+  private databaseUrl: string;
+
   constructor(settings: Settings) {
-    super(settings);
-  }
+    const {
+      authenticationMethod,
+      databaseUrl,
+      basicAuthFilepath,
+      certFilepath,
+      keyFilepath,
+      rootCAFilepath,
+      rejectUnauthorized,
+    } = settings;
 
-  // Creates a new index in OpenSearch
-  async addIndex(indexName: string, indexSettings: Indices_Create_RequestBody): Promise<unknown> {
-    if (indexName === "") {
-      throw new Error("Database index name cannot be an empty string");
-    }
+    this.databaseUrl = databaseUrl;
 
-    const response = await this.getDatabaseClient().indices.create({
-      index: indexName,
-      body: indexSettings,
-    });
-
-    return response.body;
-  }
-
-  // Bulk ingests documents into an index
-  async bulkIngestDocuments<T>(
-    indexName: string,
-    documents: Array<T>,
-    documentIdOptions?: {
-      idKey: string;
-      removeIdFromDocs: boolean;
-    },
-    generatedTimestampOptions?: {
-      timestampKey: string;
-      timestampFormat: ALLOWED_DATE_FORMATS_TYPE;
-    },
-  ): Promise<{ total: number; failed: number; successful: number }> {
-    const response = await this.getDatabaseClient().helpers.bulk({
-      datasource: documents,
-      onDocument(document) {
-        let tempDoc = structuredClone(document);
-
-        // add date timestamp field to each document
-        if (generatedTimestampOptions) {
-          const { timestampFormat, timestampKey } = generatedTimestampOptions;
-          tempDoc = { ...tempDoc, [timestampKey]: getDateNow(timestampFormat) };
-        }
-
-        // document ID provided in the JSON. Ingest as _id
-        if (documentIdOptions) {
-          const { idKey, removeIdFromDocs } = documentIdOptions;
-          const documentId = tempDoc[idKey];
-          // delete ID key from doc
-          if (removeIdFromDocs) {
-            delete tempDoc[idKey];
-          }
-
-          return [
-            {
-              index: { _index: indexName, _id: documentId },
-            },
-            tempDoc,
-          ];
-        }
-
-        // document ID not provided, using opensearch internal ID generation
-        return [
-          {
-            index: { _index: indexName },
-          },
-          tempDoc,
-        ];
-      },
-    });
-
-    const { total, failed, successful } = response;
-
-    return { total, failed, successful };
-  }
-
-  // Retrieves documents from an index. Uses scroll API internally, so adjust size and window timeout accordingly
-  async bulkRetrieveDocuments(
-    indexName: string,
-    searchQuery: Search_RequestBody = { query: { match_all: {} } },
-    scrollSize: number = 500,
-    scrollWindowTimeout: string = "10m",
-  ) {
-    const responseQueue: Array<Search_ResponseBody> = [];
-    const result: Array<object> = [];
-
-    if (indexName === "") {
-      throw new Error("Database index cannot be an empty string");
-    }
-
-    const response = await this.getDatabaseClient().search({
-      index: indexName,
-      scroll: scrollWindowTimeout,
-      size: scrollSize,
-      body: searchQuery,
-    });
-
-    responseQueue.push(response.body);
-
-    while (responseQueue.length > 0) {
-      const responseBody = responseQueue.shift();
-
-      if (!responseBody) {
-        return;
-      }
-
-      const totalDocumentHits = responseBody.hits.total as TotalHits;
-      const totalDocumentCount = totalDocumentHits.value;
-      const scrollId = responseBody._scroll_id;
-
-      responseBody.hits.hits.forEach(function (hit) {
-        const document = structuredClone(hit._source) as object;
-        document["_id"] = hit._id; // push the internal document ID
-        result.push(document);
-      });
-
-      // all documents obtained, return to client
-      if (totalDocumentCount === result.length) {
-        console.log(`Retrieved all documents from ${indexName}!`);
-        await this.getDatabaseClient().clearScroll({
-          scroll_id: scrollId,
-        }); // closes the scroll context, do not wait until timeout
-        return result;
-      }
-
-      const nextScrollResponse = await this.getDatabaseClient().scroll({
-        scroll_id: scrollId,
-        scroll: scrollWindowTimeout,
-      });
-
-      // get the next response if there are more documents to fetch
-      responseQueue.push(nextScrollResponse.body);
-
-      console.log(
-        `Retrieved ${result.length}/${totalDocumentCount} documents from ${indexName}...`,
+    if (authenticationMethod === "BASIC_AUTH" && !basicAuthFilepath) {
+      throw new Error(
+        "Authentication method is set to BASIC_AUTH, but BASIC_AUTH_FILE_PATH is not provided",
       );
     }
-  }
 
-  async fetchIndexMapping(index: string): Promise<Indices_GetMapping_ResponseBody> {
-    if (index === "") {
-      throw new Error("Database index name cannot be an empty string");
+    if (authenticationMethod === "BASIC_AUTH" && basicAuthFilepath) {
+      this.databaseClient = this.getBasicAuthClient(
+        basicAuthFilepath,
+        rootCAFilepath,
+        rejectUnauthorized,
+      );
+      return;
     }
 
-    const response = await this.getDatabaseClient().indices.getMapping({
-      index,
-    });
+    // authentication method set to TLS Cert and Key
+    if (!certFilepath || !keyFilepath) {
+      throw new Error(
+        "Authentication method is set to CERTIFICATE_AUTH, but CERT_AUTH_FILE_PATH/KEY_FILE_PATH is not provided",
+      );
+    }
 
-    return response.body;
+    this.databaseClient = this.getCertificationAuthClient(
+      certFilepath,
+      keyFilepath,
+      rootCAFilepath,
+      rejectUnauthorized,
+    );
+  }
+
+  private getBasicAuthClient(
+    basicAuthFilepath: string,
+    rootCAFilepath?: string,
+    rejectUnauthorized = true,
+  ): Client {
+    const credentials = fs.readFileSync(basicAuthFilepath, { encoding: "utf8" });
+    const [username, password] = credentials.split(":");
+    return new Client({
+      node: this.databaseUrl,
+      auth: {
+        username,
+        password,
+      },
+      ssl: {
+        ca: rootCAFilepath ? [fs.readFileSync(rootCAFilepath)] : undefined,
+        rejectUnauthorized,
+      },
+    });
+  }
+
+  private getCertificationAuthClient(
+    certFilepath: string,
+    keyFilepath: string,
+    rootCAFilepath?: string,
+    rejectUnauthorized = true,
+  ): Client {
+    return new Client({
+      node: this.databaseUrl,
+      ssl: {
+        cert: fs.readFileSync(certFilepath),
+        key: fs.readFileSync(keyFilepath),
+        ca: rootCAFilepath ? [fs.readFileSync(rootCAFilepath)] : undefined,
+        rejectUnauthorized,
+      },
+    });
+  }
+
+  getDatabaseClient(): Client {
+    return this.databaseClient;
+  }
+
+  getDatabaseURL(): string {
+    return this.databaseUrl;
+  }
+
+  async ping(): Promise<boolean> {
+    return (await this.databaseClient.ping()).statusCode === 200;
   }
 }

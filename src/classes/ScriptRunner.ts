@@ -1,72 +1,28 @@
-import { Analyzer } from "@opensearch-project/opensearch/api/_types/_common.analysis.js";
-import {
-  Indices_Create_RequestBody,
-  Search_RequestBody,
-} from "@opensearch-project/opensearch/api/index.js";
+import { Indices_Create_RequestBody } from "@opensearch-project/opensearch/api/index.js";
 import decompress from "decompress";
 import { promises as fs, default as fsSync } from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
 import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../constants";
-import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
 import {
-  getOutputFolderPath,
-  removeDir,
-  writeDocumentToDir,
-  zipFolder,
-} from "../utils/folderUtils";
-import DatabaseClient from "./DatabaseClient";
+  BulkIngestDocumentsOption,
+  CreateIndexOption,
+  ExportFromIndexOptions,
+  ExportMappingFromIndicesOptions,
+} from "../interfaces/ScriptRunnerInterfaces";
+import chunkArray from "../utils/chunkUtils";
+import { getOutputFolderPath, removeDir, zipFolder } from "../utils/folderUtils";
+import DatabaseService from "./DatabaseService";
+import FileManager from "./FileManager";
 
 const INPUT_FOLDER_PATH = path.join("input", "bulk-ingest");
 
-interface BulkIngestDocumentsOption {
-  indexName: string;
-  inputZipFilename: string;
-  documentIdOptions?: {
-    idKey: string;
-    removeIdFromDocs: boolean;
-  };
-  generatedTimestampOptions?: {
-    timestampKey: string;
-    timestampFormat: ALLOWED_DATE_FORMATS_TYPE;
-  };
-}
+export default class ScriptRunner {
+  private databaseService: DatabaseService;
 
-interface CreateIndexOption {
-  indexName: string;
-  shardCount?: number;
-  replicaCount?: number;
-  maxResultWindow?: number;
-  refreshInterval?: string;
-  search?: {
-    defaultPipeline?: string;
-  };
-  analysis?: {
-    analyzer?: Record<string, Analyzer>;
-  };
-  mappings?: Indices_Create_RequestBody["mappings"];
-  aliases?: { [key: string]: object };
-}
-
-interface ExportFromIndexOptions {
-  indexName: string;
-  searchQuery?: Search_RequestBody;
-  scrollSize?: number;
-  scrollWindowTimeout?: string;
-  outputFilename?: string;
-}
-
-interface ExportMappingFromIndicesOptions {
-  indices: string[];
-  outputFilename?: string;
-}
-
-class ScriptRunner {
-  private databaseInstance: DatabaseClient;
-
-  constructor(databaseInstance: DatabaseClient) {
-    this.databaseInstance = databaseInstance;
+  constructor(databaseService: DatabaseService) {
+    this.databaseService = databaseService;
   }
 
   // Ingests zip file of individual JSON records in the database
@@ -76,7 +32,6 @@ class ScriptRunner {
     const tempProcessingFilePath = path.join(INPUT_FOLDER_PATH, "temp");
     const zipFilePath = path.join(INPUT_FOLDER_PATH, inputZipFilename);
     console.log(`Extracting documents from ${zipFilePath}...`);
-    const documents: Array<object> = [];
 
     try {
       if (!indexName) {
@@ -110,11 +65,12 @@ class ScriptRunner {
 
       await decompress(zipFilePath, tempProcessingFilePath);
 
+      const documents: Array<object> = [];
       const filenames = await fs.readdir(tempProcessingFilePath);
       for (const filename of filenames) {
         const filepath = path.join(tempProcessingFilePath, filename);
-        const document = JSON.parse(await fs.readFile(filepath, { encoding: "utf-8" }));
-        documents.push(document);
+        const tempDocuments = await FileManager.readJsonLine(filepath);
+        documents.push(...tempDocuments);
       }
 
       console.log(`Extracted ${documents.length} documents. Ingesting to ${indexName}...`);
@@ -144,7 +100,7 @@ class ScriptRunner {
         }
       }
 
-      const response = await this.databaseInstance.bulkIngestDocuments(
+      const response = await this.databaseService.bulkIngestDocuments(
         indexName,
         documents,
         documentIdOptions,
@@ -192,7 +148,7 @@ class ScriptRunner {
       aliases,
     };
 
-    await this.databaseInstance.addIndex(indexName, indexSettings);
+    await this.databaseService.addIndex(indexName, indexSettings);
     console.log(`Created a new index ${indexName} successfully!`);
   }
 
@@ -203,20 +159,15 @@ class ScriptRunner {
       searchQuery = { query: { match_all: {} } },
       scrollSize = 500,
       scrollWindowTimeout = "1m",
-      outputFilename,
     } = options;
 
-    const filename = outputFilename || `${indexName}-${uuidv4()}`;
+    const foldername = `${indexName}--${uuidv4()}`;
     const outputFolderPath = getOutputFolderPath("export-from-index");
-    const outputFullPath = path.join(outputFolderPath, filename);
-
-    if (fsSync.existsSync(`${outputFullPath}.zip`)) {
-      throw new Error("output file exists, please change the outputFilename");
-    }
+    const outputFullPath = path.join(outputFolderPath, foldername);
 
     console.log("Retrieving the documents, this may take awhile...");
 
-    const documents = await this.databaseInstance.bulkRetrieveDocuments(
+    const documents = await this.databaseService.bulkRetrieveDocuments(
       indexName,
       searchQuery,
       scrollSize,
@@ -233,8 +184,21 @@ class ScriptRunner {
       throw new Error("Unable to retrieve documents, please try again");
     }
 
-    for (const document of documents) {
-      await writeDocumentToDir(outputFullPath, document);
+    // if folder doesn't exist, create one
+    if (!fsSync.existsSync(outputFullPath)) {
+      await fs.mkdir(outputFullPath, { recursive: true });
+    }
+
+    // each file should contain at most 10,000 items
+    const chunkedDocumentsList = chunkArray(documents, 10_000);
+    let counter = 1;
+    const filename = uuidv4();
+    for (const chunkedDocuments of chunkedDocumentsList) {
+      await FileManager.saveAsJsonLine(
+        chunkedDocuments,
+        path.join(outputFullPath, `${filename}-${counter}.jsonl`),
+      );
+      counter++;
     }
 
     await zipFolder(outputFullPath, outputFullPath);
@@ -245,20 +209,23 @@ class ScriptRunner {
   }
 
   async exportMappingFromIndices(options: ExportMappingFromIndicesOptions): Promise<void> {
-    const { indices, outputFilename } = options;
+    const { indices } = options;
 
-    const filename = outputFilename || uuidv4();
+    const filename = uuidv4();
     const outputFolderPath = getOutputFolderPath("export-index-mapping");
     const outputFullPath = path.join(outputFolderPath, filename);
 
-    if (fsSync.existsSync(`${outputFullPath}.zip`)) {
-      throw new Error("output file exists, please change the outputFilename");
+    // if folder doesn't exist, create one
+    if (!fsSync.existsSync(outputFullPath)) {
+      await fs.mkdir(outputFullPath, { recursive: true });
     }
 
     for (const index of indices) {
-      const response = await this.databaseInstance.fetchIndexMapping(index);
-      const mapping = response[index].mappings;
-      await writeDocumentToDir(outputFullPath, mapping, index);
+      const response = await this.databaseService.fetchIndexMapping(index);
+      const indexMapping = response.mappings[index].mappings;
+      const indexSettings = response.settings[index].settings;
+      const output = { mappings: indexMapping, settings: indexSettings };
+      await FileManager.saveAsJson(output, path.join(outputFullPath, `${index}.json`));
     }
 
     await zipFolder(outputFullPath, outputFullPath);
@@ -267,5 +234,3 @@ class ScriptRunner {
     console.log(`Successfully exported mappings! File stored at: ${outputFullPath}.zip`);
   }
 }
-
-export default ScriptRunner;

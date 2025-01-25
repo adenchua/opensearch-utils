@@ -1,6 +1,5 @@
 {
   "indexName": "sample-index",
   "scrollSize": 1000,
-  "scrollWindowTimeout": "15m",
-  "outputFilename": "sample-output"
+  "scrollWindowTimeout": "15m"
 }
