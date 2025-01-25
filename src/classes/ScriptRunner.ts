@@ -1,62 +1,22 @@
-import { Analyzer } from "@opensearch-project/opensearch/api/_types/_common.analysis.js";
-import {
-  Indices_Create_RequestBody,
-  Search_RequestBody,
-} from "@opensearch-project/opensearch/api/index.js";
+import { Indices_Create_RequestBody } from "@opensearch-project/opensearch/api/index.js";
 import decompress from "decompress";
 import { promises as fs, default as fsSync } from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
 import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../constants";
-import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
+import {
+  BulkIngestDocumentsOption,
+  CreateIndexOption,
+  ExportFromIndexOptions,
+  ExportMappingFromIndicesOptions,
+} from "../interfaces/ScriptRunnerInterfaces";
 import chunkArray from "../utils/chunkUtils";
 import { getOutputFolderPath, removeDir, zipFolder } from "../utils/folderUtils";
 import DatabaseService from "./DatabaseService";
 import FileManager from "./FileManager";
 
 const INPUT_FOLDER_PATH = path.join("input", "bulk-ingest");
-
-interface BulkIngestDocumentsOption {
-  indexName: string;
-  inputZipFilename: string;
-  documentIdOptions?: {
-    idKey: string;
-    removeIdFromDocs: boolean;
-  };
-  generatedTimestampOptions?: {
-    timestampKey: string;
-    timestampFormat: ALLOWED_DATE_FORMATS_TYPE;
-  };
-}
-
-interface CreateIndexOption {
-  indexName: string;
-  shardCount?: number;
-  replicaCount?: number;
-  maxResultWindow?: number;
-  refreshInterval?: string;
-  search?: {
-    defaultPipeline?: string;
-  };
-  analysis?: {
-    analyzer?: Record<string, Analyzer>;
-  };
-  mappings?: Indices_Create_RequestBody["mappings"];
-  aliases?: { [key: string]: object };
-}
-
-interface ExportFromIndexOptions {
-  indexName: string;
-  searchQuery?: Search_RequestBody;
-  scrollSize?: number;
-  scrollWindowTimeout?: string;
-}
-
-interface ExportMappingFromIndicesOptions {
-  indices: string[];
-  outputFilename?: string;
-}
 
 export default class ScriptRunner {
   private databaseService: DatabaseService;
@@ -262,8 +222,10 @@ export default class ScriptRunner {
 
     for (const index of indices) {
       const response = await this.databaseService.fetchIndexMapping(index);
-      const mapping = response[index].mappings;
-      await FileManager.saveAsJson(mapping, path.join(outputFullPath, `${index}.json`));
+      const indexMapping = response.mappings[index].mappings;
+      const indexSettings = response.settings[index].settings;
+      const output = { mappings: indexMapping, settings: indexSettings };
+      await FileManager.saveAsJson(output, path.join(outputFullPath, `${index}.json`));
     }
 
     await zipFolder(outputFullPath, outputFullPath);

@@ -99,6 +99,10 @@ export default class DatabaseClient {
     return this.databaseClient;
   }
 
+  getDatabaseURL(): string {
+    return this.databaseUrl;
+  }
+
   async ping(): Promise<boolean> {
     return (await this.databaseClient.ping()).statusCode === 200;
   }

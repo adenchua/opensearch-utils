@@ -2,6 +2,7 @@ import { TotalHits } from "@opensearch-project/opensearch/api/_types/_core.searc
 import {
   Indices_Create_RequestBody,
   Indices_GetMapping_ResponseBody,
+  Indices_GetSettings_ResponseBody,
   Search_RequestBody,
   Search_ResponseBody,
 } from "@opensearch-project/opensearch/api/index.js";
@@ -9,6 +10,7 @@ import {
 import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
 import { getDateNow } from "../utils/dateUtils";
 import DatabaseClient from "./DatabaseClient";
+import InvalidDatabaseIndexError from "../errors/InvalidDatabaseIndexError";
 
 export default class DatabaseService {
   private databaseClient: DatabaseClient;
@@ -20,7 +22,7 @@ export default class DatabaseService {
   // Creates a new index in OpenSearch
   async addIndex(indexName: string, indexSettings: Indices_Create_RequestBody): Promise<unknown> {
     if (indexName === "") {
-      throw new Error("Database index name cannot be an empty string");
+      throw new InvalidDatabaseIndexError();
     }
 
     const response = await this.databaseClient.getDatabaseClient().indices.create({
@@ -89,7 +91,7 @@ export default class DatabaseService {
 
   // Retrieves documents from an index. Uses scroll API internally, so adjust size and window timeout accordingly
   async bulkRetrieveDocuments(
-    indexName: string,
+    index: string,
     searchQuery: Search_RequestBody = { query: { match_all: {} } },
     scrollSize: number = 500,
     scrollWindowTimeout: string = "10m",
@@ -97,12 +99,12 @@ export default class DatabaseService {
     const responseQueue: Array<Search_ResponseBody> = [];
     const result: Array<object> = [];
 
-    if (indexName === "") {
-      throw new Error("Database index cannot be an empty string");
+    if (index === "") {
+      throw new InvalidDatabaseIndexError();
     }
 
     const response = await this.databaseClient.getDatabaseClient().search({
-      index: indexName,
+      index,
       scroll: scrollWindowTimeout,
       size: scrollSize,
       body: searchQuery,
@@ -129,7 +131,7 @@ export default class DatabaseService {
 
       // all documents obtained, return to client
       if (totalDocumentCount === result.length) {
-        console.log(`Retrieved all documents from ${indexName}!`);
+        console.log(`Retrieved all documents from ${index}!`);
         await this.databaseClient.getDatabaseClient().clearScroll({
           scroll_id: scrollId,
         }); // closes the scroll context, do not wait until timeout
@@ -144,21 +146,28 @@ export default class DatabaseService {
       // get the next response if there are more documents to fetch
       responseQueue.push(nextScrollResponse.body);
 
-      console.log(
-        `Retrieved ${result.length}/${totalDocumentCount} documents from ${indexName}...`,
-      );
+      console.log(`Retrieved ${result.length}/${totalDocumentCount} documents from ${index}...`);
     }
   }
 
-  async fetchIndexMapping(index: string): Promise<Indices_GetMapping_ResponseBody> {
+  async fetchIndexMapping(index: string): Promise<{
+    mappings: Indices_GetMapping_ResponseBody;
+    settings: Indices_GetSettings_ResponseBody;
+  }> {
     if (index === "") {
-      throw new Error("Database index name cannot be an empty string");
+      throw new InvalidDatabaseIndexError();
     }
 
-    const response = await this.databaseClient.getDatabaseClient().indices.getMapping({
+    // settings contain useful information such as custom analyzers
+    // custom analyzers may be present in the mapping
+    const settingsResponse = await this.databaseClient
+      .getDatabaseClient()
+      .indices.getSettings({ index });
+
+    const mappingsResponse = await this.databaseClient.getDatabaseClient().indices.getMapping({
       index,
     });
 
-    return response.body;
+    return { mappings: mappingsResponse.body, settings: settingsResponse.body };
   }
 }

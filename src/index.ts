@@ -6,6 +6,8 @@ import DatabaseService from "./classes/DatabaseService";
 import ScriptRunner from "./classes/ScriptRunner";
 import { APP_VERSION } from "./constants";
 import { databaseClient } from "./singletons";
+import DatabaseConnectionError from "./errors/DatabaseConnectionError";
+import InvalidConfigError from "./errors/InvalidConfigError";
 
 type ScriptSelectionType =
   | "CREATE_INDEX"
@@ -19,22 +21,22 @@ async function runScriptSelectionPrompt(): Promise<ScriptSelectionType> {
     message: "Select a script to run:",
     choices: [
       {
-        name: "Bulk ingest documents",
+        name: "1. Bulk ingest documents",
         value: "BULK_INGEST",
-        description: "Ingests json documents from an input folder into an index",
+        description: "Ingests jsonl documents from an input folder into an index",
       },
       {
-        name: "Create new index",
+        name: "2. Create new index",
         value: "CREATE_INDEX",
         description: "Create a new index",
       },
       {
-        name: "Export documents from index",
+        name: "3. Export documents from index",
         value: "EXPORT_FROM_INDEX",
         description: "Exports documents from an index as json files",
       },
       {
-        name: "Extract indices mapping",
+        name: "4. Export indices mapping",
         value: "EXPORT_INDEX_MAPPING",
         description:
           "Exports mappings from a list of indices and save them as individual json objects",
@@ -69,7 +71,7 @@ async function runScript(
       scriptRunner.exportMappingFromIndices(selectedConfig);
       break;
     default:
-      throw new Error("Unable to load config, please try again");
+      throw new InvalidConfigError();
   }
 }
 
@@ -97,11 +99,13 @@ async function run() {
   console.log(`Running OpenSearch-Utils version ${APP_VERSION}...`);
 
   const connectionSuccessful = await databaseClient.ping();
+  const databaseURL = databaseClient.getDatabaseURL();
 
   if (!connectionSuccessful) {
-    throw new Error("Failed to connect to database");
+    throw new DatabaseConnectionError();
   } else {
     console.log("Connected to database successfully!");
+    console.log("Connected to database:", databaseURL);
   }
 
   const databaseService = new DatabaseService(databaseClient);
