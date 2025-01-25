@@ -138,7 +138,7 @@ Extracts all documents from an index and saves documents in [`jsonl`](https://js
 
 Extracts mappings from a list of provided indices and saves each mapping to a json file. A zipped file containing all the documents will be generated under `./output/export-from-index/*`
 
-```json
+```js
 {
   // list of database indices to extract documents from
   "indices": ["sample-index"]
