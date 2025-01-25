@@ -62,7 +62,7 @@ Run `npm run start` and it should automatically start up the script
 
 Creates an index in the database.
 
-```json
+```js
 {
   // create an index with this index name
 "indexName": "sample-index",
@@ -94,9 +94,9 @@ Creates an index in the database.
 
 ### (Script) Bulk Ingest Documents
 
-Takes in a zipped folder (`./input/bulk-ingest/xxx.zip`) of json files and ingests to an index.
+Takes in a zipped folder (`./input/bulk-ingest/xxx.zip`) of [`jsonl`](https://jsonlines.org/) files and ingests to an index.
 
-```json
+```js
 {
   // ingests the jsons to this index name
   "indexName": "sample-index",
@@ -119,9 +119,9 @@ Takes in a zipped folder (`./input/bulk-ingest/xxx.zip`) of json files and inges
 
 ### (Script) Export From Index
 
-Extracts all documents from an index and saves each document as a json. Zip file will be generated under `./output/export-from-index/YYYY-MM-dd/*`
+Extracts all documents from an index and saves documents in [`jsonl`](https://jsonlines.org/) format. Zip file will be generated under `./output/export-from-index/YYYY-MM-dd/*`
 
-```json
+```js
 {
   // index to extract documents from
   "indexName": "sample-index",
