@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node --env-file=.env --import=tsx ./src/index.ts",
     "format": "prettier ./src/**/* --write",
-    "lint": "eslint ./src/**/*"
+    "lint": "eslint ./src/**/* && tsc --noEmit"
   },
   "author": "Aden Chua",
   "license": "MIT",
