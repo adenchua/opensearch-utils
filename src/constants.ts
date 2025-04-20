@@ -1,6 +1,6 @@
 import isTrue from "./utils/booleanHelper";
 
-export const APP_VERSION = "1.4.0";
+export const APP_VERSION = "1.5.0";
 
 export const DATABASE_URL = process.env.DATABASE_URL || "";
 export const AUTHENTICATION_METHOD = process.env.AUTHENTICATION_METHOD || "BASIC_AUTH";

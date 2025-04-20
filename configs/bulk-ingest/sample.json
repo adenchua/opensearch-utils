@@ -1,6 +1,6 @@
 {
   "indexName": "sample-index",
-  "inputZipFilename": "sample.zip",
+  "inputZipFilename": "a4bd8699-a7fa-4e9c-8084-0df5d653e36b.zip",
   "documentIdOptions": {
     "idKey": "_id",
     "removeIdFromDocs": true

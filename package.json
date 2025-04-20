@@ -16,12 +16,14 @@
     "@inquirer/prompts": "^7.2.2",
     "@opensearch-project/opensearch": "^3.1.0",
     "decompress": "^4.2.1",
+    "lodash": "^4.17.21",
     "uuid": "^11.0.5",
     "zip-a-folder": "^3.1.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@types/decompress": "^4.2.7",
+    "@types/lodash": "^4.17.16",
     "@types/node": "^22.10.5",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
