@@ -2,12 +2,14 @@ import { select } from "@inquirer/prompts";
 import { promises as fs } from "fs";
 import path from "path";
 
-import DatabaseService from "./classes/DatabaseService";
-import ScriptRunner from "./classes/ScriptRunner";
 import { APP_VERSION } from "./constants";
-import { databaseClient } from "./singletons";
 import DatabaseConnectionError from "./errors/DatabaseConnectionError";
 import InvalidConfigError from "./errors/InvalidConfigError";
+import bulkIngestDocuments from "./scripts/bulk-ingest";
+import createIndex from "./scripts/create-index";
+import exportDocsFromIndex from "./scripts/export-docs-from-index";
+import exportMappingFromIndices from "./scripts/export-mapping-from-indices";
+import { databaseClient } from "./singletons";
 
 type ScriptSelectionType =
   | "CREATE_INDEX"
@@ -47,28 +49,25 @@ async function runScriptSelectionPrompt(): Promise<ScriptSelectionType> {
   return result;
 }
 
-async function runScript(
-  scriptRunner: ScriptRunner,
-  selectedScript: ScriptSelectionType,
-): Promise<void> {
+async function runScript(selectedScript: ScriptSelectionType): Promise<void> {
   let selectedConfig;
 
   switch (selectedScript) {
     case "CREATE_INDEX":
       selectedConfig = await runConfigSelectionPrompt("create-index");
-      scriptRunner.createIndex(selectedConfig);
+      createIndex(selectedConfig);
       break;
     case "BULK_INGEST":
       selectedConfig = await runConfigSelectionPrompt("bulk-ingest");
-      scriptRunner.bulkIngestDocuments(selectedConfig);
+      bulkIngestDocuments(selectedConfig, path.join("input", "bulk-ingest"));
       break;
     case "EXPORT_FROM_INDEX":
       selectedConfig = await runConfigSelectionPrompt("export-from-index");
-      scriptRunner.exportFromIndex(selectedConfig);
+      exportDocsFromIndex(selectedConfig);
       break;
     case "EXPORT_INDEX_MAPPING":
       selectedConfig = await runConfigSelectionPrompt("export-mapping-from-indices");
-      scriptRunner.exportMappingFromIndices(selectedConfig);
+      exportMappingFromIndices(selectedConfig);
       break;
     default:
       throw new InvalidConfigError();
@@ -108,10 +107,8 @@ async function run() {
     console.log("Connected to database:", databaseURL);
   }
 
-  const databaseService = new DatabaseService(databaseClient);
-  const scriptRunner = new ScriptRunner(databaseService);
   const selectedScript = await runScriptSelectionPrompt();
-  runScript(scriptRunner, selectedScript);
+  runScript(selectedScript);
 }
 
 run();
