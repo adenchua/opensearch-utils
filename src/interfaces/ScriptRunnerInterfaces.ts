@@ -21,6 +21,7 @@ export interface BulkIngestDocumentsOption {
 
 export interface CreateIndexOption {
   indexName: string;
+  indexKnn?: boolean;
   shardCount?: number;
   replicaCount?: number;
   maxResultWindow?: number;

@@ -1,6 +1,7 @@
 import { Indices_Create_RequestBody } from "@opensearch-project/opensearch/api/index.js";
 import decompress from "decompress";
 import { promises as fs, default as fsSync } from "fs";
+import _ from "lodash";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
@@ -11,7 +12,6 @@ import {
   ExportFromIndexOptions,
   ExportMappingFromIndicesOptions,
 } from "../interfaces/ScriptRunnerInterfaces";
-import chunkArray from "../utils/chunkUtils";
 import { getOutputFolderPath, removeDir, zipFolder } from "../utils/folderUtils";
 import DatabaseService from "./DatabaseService";
 import FileManager from "./FileManager";
@@ -100,17 +100,29 @@ export default class ScriptRunner {
         }
       }
 
-      const response = await this.databaseService.bulkIngestDocuments(
-        indexName,
-        documents,
-        documentIdOptions,
-        generatedTimestampOptions,
-      );
+      const CHUNK_SIZE = 10_000;
+      const documentChunks = _.chunk(documents, CHUNK_SIZE);
 
-      const { failed, successful, total } = response;
-      console.log(
-        `Ingested ${successful}/${total} documents into "${indexName}"! (Failed: ${failed})`,
-      );
+      const totalDocuments = documents.length;
+      let totalSucceeded = 0;
+      let totalFailed = 0;
+
+      for (const documentChunk of documentChunks) {
+        const response = await this.databaseService.bulkIngestDocuments(
+          indexName,
+          documentChunk,
+          documentIdOptions,
+          generatedTimestampOptions,
+        );
+
+        const { failed, successful } = response;
+        totalSucceeded += successful;
+        totalFailed += failed;
+
+        console.log(
+          `Ingested ${totalSucceeded}/${totalDocuments} documents into "${indexName}"! (Failed: ${totalFailed})`,
+        );
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -122,6 +134,7 @@ export default class ScriptRunner {
   async createIndex(options: CreateIndexOption): Promise<void> {
     const {
       indexName,
+      indexKnn = false,
       maxResultWindow,
       refreshInterval,
       search,
@@ -137,6 +150,7 @@ export default class ScriptRunner {
         number_of_replicas: replicaCount,
         max_result_window: maxResultWindow,
         refresh_interval: refreshInterval,
+        knn: indexKnn,
         search: {
           default_pipeline: search?.defaultPipeline,
         },
@@ -190,7 +204,7 @@ export default class ScriptRunner {
     }
 
     // each file should contain at most 10,000 items
-    const chunkedDocumentsList = chunkArray(documents, 10_000);
+    const chunkedDocumentsList = _.chunk(documents, 10_000);
     let counter = 1;
     const filename = uuidv4();
     for (const chunkedDocuments of chunkedDocumentsList) {

@@ -66,6 +66,8 @@ Creates an index in the database.
 {
   // create an index with this index name
 "indexName": "sample-index",
+// allow creation of vector index. Defaults to false
+"indexKnn": false,
 // (optional) index shard count. Defaults to 1
 "shardCount": 1,
 // (optional) index replica count. Defaults to 1
