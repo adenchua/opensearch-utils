@@ -29,9 +29,7 @@ export default async function createIndex(options: CreateIndexOption): Promise<v
       search: {
         default_pipeline: search?.defaultPipeline,
       },
-      analysis: {
-        analyzer: analysis?.analyzer,
-      },
+      analysis,
     },
     mappings,
     aliases,

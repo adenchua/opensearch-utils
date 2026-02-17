@@ -1,3 +1,7 @@
+import {
+  Indices_GetMapping_ResponseBody,
+  Indices_GetSettings_ResponseBody,
+} from "@opensearch-project/opensearch/api/index.js";
 import { promises as fs, default as fsSync } from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
@@ -7,6 +11,14 @@ import FileManager from "../../classes/FileManager";
 import { databaseClient } from "../../singletons";
 import { getOutputFolderPath, removeDir, zipFolder } from "../../utils/folderUtils";
 import ExportMappingFromIndicesOptions from "./interfaces";
+
+/**
+ * Opensearch settings/mappings response body's first key is the index name
+ * This function extracts that index name to be used to obtain the actual settings/mappings
+ */
+function getIndexName(obj: Indices_GetSettings_ResponseBody | Indices_GetMapping_ResponseBody) {
+  return obj && Object.keys(obj).length > 0 ? Object.keys(obj)[0] : null;
+}
 
 export default async function exportMappingFromIndices(
   options: ExportMappingFromIndicesOptions,
@@ -25,9 +37,23 @@ export default async function exportMappingFromIndices(
 
   for (const index of indices) {
     const response = await databaseService.fetchIndexMapping(index);
-    const indexMapping = response.mappings[index].mappings;
-    const indexSettings = response.settings[index].settings;
-    const output = { mappings: indexMapping, settings: indexSettings };
+    const { mappings, settings } = response;
+    const indexName = getIndexName(mappings);
+
+    if (indexName == null) {
+      throw new Error(`Index '${index}' doesn't exist`);
+    }
+
+    const output = {
+      indexName,
+      shardCount: settings[indexName].settings?.index?.number_of_shards,
+      replicaCount: settings[indexName].settings?.index?.number_of_replicas,
+      mappings: mappings[indexName].mappings,
+      analysis: settings[indexName].settings?.index?.analysis,
+      // if given index is not the same as index in db, consider it as an alias
+      aliases: index !== indexName ? { [index]: {} } : {},
+    };
+
     await FileManager.saveAsJson(output, path.join(outputFullPath, `${index}.json`));
   }
 

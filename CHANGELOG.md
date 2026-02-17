@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-02-17
+
+### CHANGED
+
+- export mapping from index to follow input of create-index to ease index creation
+- create index 'analysis' will no longer extract just the analyzers, but all custom analyzers too
+
 ## [1.5.0] - 2025-04-20
 
 ### ADDED
