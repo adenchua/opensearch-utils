@@ -1,16 +1,15 @@
 import { TotalHits } from "@opensearch-project/opensearch/api/_types/_core.search.js";
 import {
   Indices_Create_RequestBody,
-  Indices_GetMapping_ResponseBody,
-  Indices_GetSettings_ResponseBody,
+  Indices_Get_ResponseBody,
   Search_RequestBody,
   Search_ResponseBody,
 } from "@opensearch-project/opensearch/api/index.js";
 
+import InvalidDatabaseIndexError from "../errors/InvalidDatabaseIndexError";
 import { ALLOWED_DATE_FORMATS_TYPE } from "../types/dateUtilsTypes";
 import { getDateNow } from "../utils/dateUtils";
 import DatabaseClient from "./DatabaseClient";
-import InvalidDatabaseIndexError from "../errors/InvalidDatabaseIndexError";
 
 export default class DatabaseService {
   private databaseClient: DatabaseClient;
@@ -150,24 +149,8 @@ export default class DatabaseService {
     }
   }
 
-  async fetchIndexMapping(index: string): Promise<{
-    mappings: Indices_GetMapping_ResponseBody;
-    settings: Indices_GetSettings_ResponseBody;
-  }> {
-    if (index === "") {
-      throw new InvalidDatabaseIndexError();
-    }
-
-    // settings contain useful information such as custom analyzers
-    // custom analyzers may be present in the mapping
-    const settingsResponse = await this.databaseClient
-      .getDatabaseClient()
-      .indices.getSettings({ index });
-
-    const mappingsResponse = await this.databaseClient.getDatabaseClient().indices.getMapping({
-      index,
-    });
-
-    return { mappings: mappingsResponse.body, settings: settingsResponse.body };
+  async fetchIndexInfo(index: string): Promise<Indices_Get_ResponseBody> {
+    const indexResponse = await this.databaseClient.getDatabaseClient().indices.get({ index });
+    return indexResponse.body;
   }
 }

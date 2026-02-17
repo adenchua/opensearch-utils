@@ -36,9 +36,8 @@ export default async function exportMappingFromIndices(
   }
 
   for (const index of indices) {
-    const response = await databaseService.fetchIndexMapping(index);
-    const { mappings, settings } = response;
-    const indexName = getIndexName(mappings);
+    const response = await databaseService.fetchIndexInfo(index);
+    const indexName = getIndexName(response);
 
     if (indexName == null) {
       throw new Error(`Index '${index}' doesn't exist`);
@@ -46,12 +45,11 @@ export default async function exportMappingFromIndices(
 
     const output = {
       indexName,
-      shardCount: settings[indexName].settings?.index?.number_of_shards,
-      replicaCount: settings[indexName].settings?.index?.number_of_replicas,
-      mappings: mappings[indexName].mappings,
-      analysis: settings[indexName].settings?.index?.analysis,
-      // if given index is not the same as index in db, consider it as an alias
-      aliases: index !== indexName ? { [index]: {} } : {},
+      shardCount: response[indexName].settings?.index?.number_of_shards,
+      replicaCount: response[indexName].settings?.index?.number_of_replicas,
+      mappings: response[indexName].mappings,
+      analysis: response[indexName].settings?.index?.analysis,
+      aliases: response[indexName].aliases,
     };
 
     await FileManager.saveAsJson(output, path.join(outputFullPath, `${index}.json`));
