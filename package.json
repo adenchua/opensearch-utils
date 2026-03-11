@@ -13,7 +13,7 @@
   "author": "Aden Chua",
   "license": "MIT",
   "dependencies": {
-    "@inquirer/prompts": "^8.2.1",
+    "@inquirer/prompts": "^8.3.0",
     "@opensearch-project/opensearch": "^3.5.1",
     "decompress": "^4.2.1",
     "lodash": "^4.17.21",
