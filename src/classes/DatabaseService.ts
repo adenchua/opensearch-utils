@@ -47,8 +47,8 @@ export default class DatabaseService {
   ): Promise<{ total: number; failed: number; successful: number }> {
     const response = await this.databaseClient.getDatabaseClient().helpers.bulk({
       datasource: documents,
-      onDocument(document) {
-        let tempDoc = structuredClone(document);
+      onDocument(document: T) {
+        let tempDoc: Record<string, unknown> = structuredClone(document) as Record<string, unknown>;
 
         // add date timestamp field to each document
         if (generatedTimestampOptions) {
@@ -123,7 +123,7 @@ export default class DatabaseService {
       const scrollId = responseBody._scroll_id;
 
       responseBody.hits.hits.forEach(function (hit) {
-        const document = structuredClone(hit._source) as object;
+        const document = structuredClone(hit._source) as Record<string, unknown>;
         document["_id"] = hit._id; // push the internal document ID
         result.push(document);
       });
