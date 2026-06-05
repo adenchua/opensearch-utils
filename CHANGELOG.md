@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-06-05
+
+### ADDED
+
+- Support for selecting multiple config files per script run
+- `allowedScripts` per-environment filter to restrict which scripts are available in each environment
+
+### CHANGED
+
+- Database configuration and environment variables migrated from `.env` to `src/configs/environments.ts`; connection handling restructured
+- Bulk ingest config: `inputZipFilename` renamed to `inputZipPath`; now supports nested subdirectory paths (e.g. `"uat/sample.zip"`)
+- `uuid` dependency updated from `^13.0.0` to `^14.0.0`
+
+### FIXED
+
+- Added explicit type annotation for `hits` in `bulkRetrieveDocuments` method
+
 ## [1.6.0] - 2026-02-17
 
 ### CHANGED
