@@ -63,7 +63,7 @@ Credential files are read from the local filesystem at runtime and are not store
 
 Before running any script, create the config `json` file in `/configs` folder. The content of the `json` is described in the sections below.
 
-Run `npm run start`. You will first be prompted to select an environment, then a script to run, and then a config file.
+Run `npm run start`. You will first be prompted to select an environment, then a script to run, and then one or more config files. Multiple configs can be selected and will run sequentially.
 
 ### (Script) Create Index
 

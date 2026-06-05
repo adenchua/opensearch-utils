@@ -1,4 +1,4 @@
-import { select } from "@inquirer/prompts";
+import { checkbox, select } from "@inquirer/prompts";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -71,48 +71,69 @@ async function runScript(
   selectedScript: ScriptSelectionType,
   databaseClient: DatabaseClient,
 ): Promise<void> {
-  let selectedConfig;
-
   switch (selectedScript) {
-    case "CREATE_INDEX":
-      selectedConfig = await runConfigSelectionPrompt("create-index");
-      createIndex(selectedConfig, databaseClient);
+    case "CREATE_INDEX": {
+      const selectedConfigs = await runConfigSelectionPrompt("create-index");
+      const total = selectedConfigs.length;
+      for (let i = 0; i < total; i++) {
+        const { filename, config } = selectedConfigs[i];
+        console.log(`\n[${i + 1}/${total}] Running: ${filename}`);
+        await createIndex(config, databaseClient);
+      }
       break;
-    case "BULK_INGEST":
-      selectedConfig = await runConfigSelectionPrompt("bulk-ingest");
-      bulkIngestDocuments(selectedConfig, path.join("input", "bulk-ingest"), databaseClient);
+    }
+    case "BULK_INGEST": {
+      const selectedConfigs = await runConfigSelectionPrompt("bulk-ingest");
+      const total = selectedConfigs.length;
+      for (let i = 0; i < total; i++) {
+        const { filename, config } = selectedConfigs[i];
+        console.log(`\n[${i + 1}/${total}] Running: ${filename}`);
+        await bulkIngestDocuments(config, path.join("input", "bulk-ingest"), databaseClient);
+      }
       break;
-    case "EXPORT_FROM_INDEX":
-      selectedConfig = await runConfigSelectionPrompt("export-from-index");
-      exportDocsFromIndex(selectedConfig, databaseClient);
+    }
+    case "EXPORT_FROM_INDEX": {
+      const selectedConfigs = await runConfigSelectionPrompt("export-from-index");
+      const total = selectedConfigs.length;
+      for (let i = 0; i < total; i++) {
+        const { filename, config } = selectedConfigs[i];
+        console.log(`\n[${i + 1}/${total}] Running: ${filename}`);
+        await exportDocsFromIndex(config, databaseClient);
+      }
       break;
-    case "EXPORT_INDEX_MAPPING":
-      selectedConfig = await runConfigSelectionPrompt("export-mapping-from-indices");
-      exportMappingFromIndices(selectedConfig, databaseClient);
+    }
+    case "EXPORT_INDEX_MAPPING": {
+      const selectedConfigs = await runConfigSelectionPrompt("export-mapping-from-indices");
+      const total = selectedConfigs.length;
+      for (let i = 0; i < total; i++) {
+        const { filename, config } = selectedConfigs[i];
+        console.log(`\n[${i + 1}/${total}] Running: ${filename}`);
+        await exportMappingFromIndices(config, databaseClient);
+      }
       break;
+    }
     default:
       throw new InvalidConfigError();
   }
 }
 
-/** Prompt the user to select a config for a given script */
-async function runConfigSelectionPrompt(foldername: string) {
+/** Prompt the user to select one or more configs for a given script */
+async function runConfigSelectionPrompt(
+  foldername: string,
+): Promise<{ filename: string; config: any }[]> {
   const configPath = path.join("configs", foldername);
   const filenames = await fs.readdir(configPath);
-  const configInput = await select({
-    message: "Select a config:",
-    choices: filenames.map((filename) => {
-      return {
-        name: filename,
-        value: filename,
-      };
-    }),
+  const selected = await checkbox({
+    message: "Select configs to run (space to tick, enter to confirm):",
+    choices: filenames.map((filename) => ({ name: filename, value: filename })),
   });
 
-  const configFilepath = path.join(configPath, configInput);
-  const result = JSON.parse(await fs.readFile(configFilepath, { encoding: "utf-8" }));
-
-  return result;
+  return Promise.all(
+    selected.map(async (filename) => ({
+      filename,
+      config: JSON.parse(await fs.readFile(path.join(configPath, filename), { encoding: "utf-8" })),
+    })),
+  );
 }
 
 async function run() {
