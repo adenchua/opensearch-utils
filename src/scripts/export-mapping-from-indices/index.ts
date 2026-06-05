@@ -6,9 +6,9 @@ import { promises as fs, default as fsSync } from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
+import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
 import FileManager from "../../classes/FileManager";
-import { databaseClient } from "../../singletons";
 import { getOutputFolderPath, removeDir, zipFolder } from "../../utils/folderUtils";
 import ExportMappingFromIndicesOptions from "./interfaces";
 
@@ -22,6 +22,7 @@ function getIndexName(obj: Indices_GetSettings_ResponseBody | Indices_GetMapping
 
 export default async function exportMappingFromIndices(
   options: ExportMappingFromIndicesOptions,
+  databaseClient: DatabaseClient,
 ): Promise<void> {
   const { indices } = options;
   const databaseService = new DatabaseService(databaseClient);

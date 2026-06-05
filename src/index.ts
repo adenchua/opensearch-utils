@@ -9,13 +9,31 @@ import bulkIngestDocuments from "./scripts/bulk-ingest";
 import createIndex from "./scripts/create-index";
 import exportDocsFromIndex from "./scripts/export-docs-from-index";
 import exportMappingFromIndices from "./scripts/export-mapping-from-indices";
-import { databaseClient } from "./singletons";
+import { createDatabaseClient } from "./singletons";
+import { AppEnvironment, environmentConfigs } from "./configs/environments";
+import DatabaseClient from "./classes/DatabaseClient";
 
 type ScriptSelectionType =
   | "CREATE_INDEX"
   | "BULK_INGEST"
   | "EXPORT_FROM_INDEX"
   | "EXPORT_INDEX_MAPPING";
+
+/** Prompts the user to select an environment */
+async function runEnvironmentSelectionPrompt(): Promise<AppEnvironment> {
+  const result: AppEnvironment = await select({
+    message: "Select an environment:",
+    choices: [
+      { name: "Local", value: "local" },
+      { name: "Development", value: "development" },
+      { name: "Staging", value: "staging" },
+      { name: "Test", value: "test" },
+      { name: "Production", value: "production" },
+    ],
+  });
+
+  return result;
+}
 
 /** Prompts the user to select a script */
 async function runScriptSelectionPrompt(): Promise<ScriptSelectionType> {
@@ -49,25 +67,28 @@ async function runScriptSelectionPrompt(): Promise<ScriptSelectionType> {
   return result;
 }
 
-async function runScript(selectedScript: ScriptSelectionType): Promise<void> {
+async function runScript(
+  selectedScript: ScriptSelectionType,
+  databaseClient: DatabaseClient,
+): Promise<void> {
   let selectedConfig;
 
   switch (selectedScript) {
     case "CREATE_INDEX":
       selectedConfig = await runConfigSelectionPrompt("create-index");
-      createIndex(selectedConfig);
+      createIndex(selectedConfig, databaseClient);
       break;
     case "BULK_INGEST":
       selectedConfig = await runConfigSelectionPrompt("bulk-ingest");
-      bulkIngestDocuments(selectedConfig, path.join("input", "bulk-ingest"));
+      bulkIngestDocuments(selectedConfig, path.join("input", "bulk-ingest"), databaseClient);
       break;
     case "EXPORT_FROM_INDEX":
       selectedConfig = await runConfigSelectionPrompt("export-from-index");
-      exportDocsFromIndex(selectedConfig);
+      exportDocsFromIndex(selectedConfig, databaseClient);
       break;
     case "EXPORT_INDEX_MAPPING":
       selectedConfig = await runConfigSelectionPrompt("export-mapping-from-indices");
-      exportMappingFromIndices(selectedConfig);
+      exportMappingFromIndices(selectedConfig, databaseClient);
       break;
     default:
       throw new InvalidConfigError();
@@ -97,6 +118,9 @@ async function runConfigSelectionPrompt(foldername: string) {
 async function run() {
   console.log(`Running OpenSearch-Utils version ${APP_VERSION}...`);
 
+  const selectedEnv = await runEnvironmentSelectionPrompt();
+  const databaseClient = createDatabaseClient(environmentConfigs[selectedEnv]);
+
   const connectionSuccessful = await databaseClient.ping();
   const databaseURL = databaseClient.getDatabaseURL();
 
@@ -108,7 +132,7 @@ async function run() {
   }
 
   const selectedScript = await runScriptSelectionPrompt();
-  runScript(selectedScript);
+  runScript(selectedScript, databaseClient);
 }
 
 run();

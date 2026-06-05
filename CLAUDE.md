@@ -33,8 +33,8 @@ There is no test suite.
 ```
 src/
 ├── index.ts               CLI entry — connects to DB, prompts script selection, routes
-├── constants.ts           All env var reads and APP_VERSION constant
-├── singletons.ts          Instantiates the DatabaseClient singleton from constants
+├── constants.ts           APP_VERSION and date format constants
+├── singletons.ts          createDatabaseClient(config) factory — constructs DatabaseClient from an EnvironmentConfig
 ├── classes/
 │   ├── DatabaseClient.ts  OpenSearch connection management (BASIC_AUTH or CERTIFICATE_AUTH)
 │   ├── DatabaseService.ts High-level DB operations: addIndex, bulkIngestDocuments, bulkRetrieveDocuments, fetchIndexInfo
@@ -44,6 +44,8 @@ src/
 │   ├── create-index/      Create index with custom mappings and analyzers
 │   ├── export-docs-from-index/   Scroll all docs → write JSONL → compress to ZIP
 │   └── export-mapping-from-indices/  Fetch index mapping+settings → save as JSON
+├── configs/
+│   └── environments.ts    Per-environment database config (URL, auth method, SSL, file paths) for local/development/staging/test/production
 ├── errors/                DatabaseConnectionError, InvalidConfigError, InvalidDatabaseIndexError
 ├── types/                 dateUtilsTypes.ts
 └── utils/                 dateUtils, folderUtils, booleanHelper
@@ -61,13 +63,9 @@ Copy `.env.template` to `.env` and fill in these values:
 
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | Yes | OpenSearch node URL, e.g. `https://localhost:9200` |
-| `AUTHENTICATION_METHOD` | Yes | `BASIC_AUTH` or `CERTIFICATE_AUTH` |
-| `VALIDATE_SSL` | No | `0` to skip SSL verification (useful for local dev), `1` to enforce |
-| `ROOT_CA_FILE_PATH` | No | Path to root CA certificate file |
-| `BASIC_AUTH_FILE_PATH` | If `BASIC_AUTH` | Path to a file containing `username:password` |
-| `CERT_AUTH_CERT_FILE_PATH` | If `CERTIFICATE_AUTH` | Path to client certificate file |
-| `CERT_AUTH_KEY_FILE_PATH` | If `CERTIFICATE_AUTH` | Path to client key file |
+| `DATABASE_URL` | — | Moved to `src/configs/environments.ts` (per-environment) |
+| `AUTHENTICATION_METHOD` | — | Moved to `src/configs/environments.ts` (per-environment) |
+| `VALIDATE_SSL` | — | Moved to `src/configs/environments.ts` (per-environment) |
 | `OPENSEARCH_VERSION` | Docker only | OpenSearch image version for docker compose |
 | `OPENSEARCH_DATABASE_PORT` | Docker only | Host port for OpenSearch (default `9200`) |
 | `OPENSEARCH_DASHBOARDS_PORT` | Docker only | Host port for Dashboards UI (default `5601`) |

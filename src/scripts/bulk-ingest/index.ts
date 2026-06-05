@@ -3,16 +3,17 @@ import { promises as fs } from "fs";
 import _ from "lodash";
 import path from "path";
 
+import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
 import FileManager from "../../classes/FileManager";
 import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../../constants";
-import { databaseClient } from "../../singletons";
 import { removeDir } from "../../utils/folderUtils";
 import BulkIngestDocumentsOption from "./interfaces";
 
 export default async function bulkIngestDocuments(
   options: BulkIngestDocumentsOption,
   srcFolderPath: string,
+  databaseClient: DatabaseClient,
 ): Promise<void> {
   const { indexName, inputZipFilename, documentIdOptions, generatedTimestampOptions } = options;
   const databaseService = new DatabaseService(databaseClient);

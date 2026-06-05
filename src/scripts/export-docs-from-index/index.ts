@@ -3,13 +3,16 @@ import _ from "lodash";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
+import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
 import FileManager from "../../classes/FileManager";
-import { databaseClient } from "../../singletons";
 import { getOutputFolderPath, removeDir, zipFolder } from "../../utils/folderUtils";
 import ExportFromIndexOptions from "./interfaces";
 
-export default async function exportDocsFromIndex(options: ExportFromIndexOptions): Promise<void> {
+export default async function exportDocsFromIndex(
+  options: ExportFromIndexOptions,
+  databaseClient: DatabaseClient,
+): Promise<void> {
   const {
     indexName,
     searchQuery = { query: { match_all: {} } },

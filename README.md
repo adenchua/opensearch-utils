@@ -8,9 +8,11 @@ Pre-requisite: This repository runs on `>= node 22` minimally. To install the la
 
 1. Install necessary dependencies with `npm install`
 
-2. Create a `.env` file at the root of this repository. Copy the content from `.env.template` and fill up the values
+2. Create a `.env` file at the root of this repository by copying `.env.template`. This file is only needed if you are [running OpenSearch locally via Docker](#setup-opensearch-database-locally).
 
-3. There are two main ways to connect to an OpenSearch database: [set up locally](#setup-opensearch-database-locally) or [connect to an external database](#connecting-to-an-external-opensearch-database)
+3. Configure your database connection(s) in `src/configs/environments.ts`. Each environment (`local`, `development`, `staging`, `test`, `production`) has its own database URL, authentication method, SSL setting, and credential file paths.
+
+4. There are two main ways to connect to an OpenSearch database: [set up locally](#setup-opensearch-database-locally) or [connect to an external database](#connecting-to-an-external-opensearch-database)
 
 ## Setup OpenSearch database locally
 
@@ -42,21 +44,25 @@ This should start up an OpenSearch database at `https://localhost:<OPENSEARCH_DA
 
 ## Connecting to an external OpenSearch database
 
-Configure the following environment keys in `.env` file:
+Open `src/configs/environments.ts` and update the entry for the environment you want to use (e.g. `production`). Set the following fields:
 
-- `AUTHENTICATION_METHOD`
-- `BASIC_AUTH_FILE_PATH`
-- `CERT_AUTH_CERT_FILE_PATH`
-- `CERT_AUTH_KEY_FILE_PATH`
-- `DATABASE_URL`
-- `ROOT_CA_FILE_PATH`
-- `VALIDATE_SSL`
+| Field | Description |
+|---|---|
+| `databaseUrl` | URL of the OpenSearch cluster, e.g. `https://my-cluster:9200` |
+| `authenticationMethod` | `"BASIC_AUTH"` or `"CERTIFICATE_AUTH"` |
+| `validateSsl` | `true` to enforce SSL verification, `false` to skip (useful for self-signed certs) |
+| `rootCAFilePath` | Path to the root CA certificate file (optional) |
+| `basicAuthFilePath` | Path to a file containing `username:password` (required for `BASIC_AUTH`) |
+| `certAuthCertFilePath` | Path to the client certificate file (required for `CERTIFICATE_AUTH`) |
+| `certAuthKeyFilePath` | Path to the client key file (required for `CERTIFICATE_AUTH`) |
+
+Credential files are read from the local filesystem at runtime and are not stored in `.env`. Place them in `./certs/<environment>/` (this directory is git-ignored).
 
 ## Using the scripts
 
 Before running any script, create the config `json` file in `/configs` folder. The content of the `json` is described in the sections below.
 
-Run `npm run start` and it should automatically start up the script
+Run `npm run start`. You will first be prompted to select an environment, then a script to run, and then a config file.
 
 ### (Script) Create Index
 

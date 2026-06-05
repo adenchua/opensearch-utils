@@ -1,10 +1,13 @@
 import { Indices_Create_RequestBody } from "@opensearch-project/opensearch/api/index.js";
 
+import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
-import { databaseClient } from "../../singletons";
 import CreateIndexOption from "./interfaces";
 
-export default async function createIndex(options: CreateIndexOption): Promise<void> {
+export default async function createIndex(
+  options: CreateIndexOption,
+  databaseClient: DatabaseClient,
+): Promise<void> {
   const {
     indexName,
     indexKnn = false,
