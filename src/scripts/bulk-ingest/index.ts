@@ -15,11 +15,11 @@ export default async function bulkIngestDocuments(
   srcFolderPath: string,
   databaseClient: DatabaseClient,
 ): Promise<void> {
-  const { indexName, inputZipFilename, documentIdOptions, generatedTimestampOptions } = options;
+  const { indexName, inputZipPath, documentIdOptions, generatedTimestampOptions } = options;
   const databaseService = new DatabaseService(databaseClient);
 
   const tempProcessingFilePath = path.join(srcFolderPath, "temp");
-  const zipFilePath = path.join(srcFolderPath, inputZipFilename);
+  const zipFilePath = path.join(srcFolderPath, inputZipPath);
   console.log(`Extracting documents from ${zipFilePath}...`);
 
   try {
@@ -27,8 +27,8 @@ export default async function bulkIngestDocuments(
       throw new Error("indexName is required");
     }
 
-    if (inputZipFilename === "") {
-      throw new Error("inputZipFilename must not be an empty string");
+    if (inputZipPath === "") {
+      throw new Error("inputZipPath must not be an empty string");
     }
 
     await fs.access(zipFilePath).catch((error) => console.error(error));

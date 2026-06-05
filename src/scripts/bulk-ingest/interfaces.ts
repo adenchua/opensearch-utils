@@ -2,7 +2,7 @@ import { ALLOWED_DATE_FORMATS_TYPE } from "../../types/dateUtilsTypes";
 
 export default interface BulkIngestDocumentsOption {
   indexName: string;
-  inputZipFilename: string;
+  inputZipPath: string;
   documentIdOptions?: {
     idKey: string;
     removeIdFromDocs: boolean;
