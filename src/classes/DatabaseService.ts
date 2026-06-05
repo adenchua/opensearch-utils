@@ -1,4 +1,4 @@
-import { TotalHits } from "@opensearch-project/opensearch/api/_types/_core.search.js";
+import { Hit, TotalHits } from "@opensearch-project/opensearch/api/_types/_core.search.js";
 import {
   Indices_Create_RequestBody,
   Indices_Get_ResponseBody,
@@ -122,7 +122,7 @@ export default class DatabaseService {
       const totalDocumentCount = totalDocumentHits.value;
       const scrollId = responseBody._scroll_id;
 
-      responseBody.hits.hits.forEach(function (hit) {
+      responseBody.hits.hits.forEach(function (hit: Hit) {
         const document = structuredClone(hit._source) as Record<string, unknown>;
         document["_id"] = hit._id; // push the internal document ID
         result.push(document);
