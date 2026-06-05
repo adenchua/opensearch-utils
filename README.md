@@ -55,6 +55,7 @@ Open `src/configs/environments.ts` and update the entry for the environment you 
 | `basicAuthFilePath` | Path to a file containing `username:password` (required for `BASIC_AUTH`) |
 | `certAuthCertFilePath` | Path to the client certificate file (required for `CERTIFICATE_AUTH`) |
 | `certAuthKeyFilePath` | Path to the client key file (required for `CERTIFICATE_AUTH`) |
+| `allowedScripts` | List of scripts available in this environment. Scripts not listed are shown as disabled in the CLI. |
 
 Credential files are read from the local filesystem at runtime and are not stored in `.env`. Place them in `./certs/<environment>/` (this directory is git-ignored).
 

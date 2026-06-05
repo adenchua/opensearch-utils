@@ -45,7 +45,7 @@ src/
 │   ├── export-docs-from-index/   Scroll all docs → write JSONL → compress to ZIP
 │   └── export-mapping-from-indices/  Fetch index mapping+settings → save as JSON
 ├── configs/
-│   └── environments.ts    Per-environment database config (URL, auth method, SSL, file paths) for local/development/staging/test/production
+│   └── environments.ts    Per-environment database config (URL, auth method, SSL, file paths, allowedScripts) for local/development/staging/test/production; also exports ScriptSelectionType
 ├── errors/                DatabaseConnectionError, InvalidConfigError, InvalidDatabaseIndexError
 ├── types/                 dateUtilsTypes.ts
 └── utils/                 dateUtils, folderUtils, booleanHelper
@@ -91,8 +91,10 @@ For bulk ingest, place input ZIP files (containing JSONL files) in `input/bulk-i
 1. Create `src/scripts/<script-name>/interfaces.ts` — define the config shape
 2. Create `src/scripts/<script-name>/index.ts` — implement the script as a default-exported async function
 3. Add the script's config folder: `configs/<script-name>/` with a sample JSON
-4. Register the new option in `src/index.ts`:
+4. Register the new option in `src/configs/environments.ts`:
    - Add the value to `ScriptSelectionType`
+   - Add the value to `allowedScripts` in each environment that should permit it (principle of least privilege — omit from restricted environments like `production` if the script is destructive)
+5. Register the new option in `src/index.ts`:
    - Add a choice entry in `runScriptSelectionPrompt()`
    - Add a `case` in `runScript()` that calls `runConfigSelectionPrompt("<script-name>")` then your function
 

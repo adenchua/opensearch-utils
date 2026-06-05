@@ -10,14 +10,8 @@ import createIndex from "./scripts/create-index";
 import exportDocsFromIndex from "./scripts/export-docs-from-index";
 import exportMappingFromIndices from "./scripts/export-mapping-from-indices";
 import { createDatabaseClient } from "./singletons";
-import { AppEnvironment, environmentConfigs } from "./configs/environments";
+import { AppEnvironment, environmentConfigs, ScriptSelectionType } from "./configs/environments";
 import DatabaseClient from "./classes/DatabaseClient";
-
-type ScriptSelectionType =
-  | "CREATE_INDEX"
-  | "BULK_INGEST"
-  | "EXPORT_FROM_INDEX"
-  | "EXPORT_INDEX_MAPPING";
 
 /** Prompts the user to select an environment */
 async function runEnvironmentSelectionPrompt(): Promise<AppEnvironment> {
@@ -36,7 +30,9 @@ async function runEnvironmentSelectionPrompt(): Promise<AppEnvironment> {
 }
 
 /** Prompts the user to select a script */
-async function runScriptSelectionPrompt(): Promise<ScriptSelectionType> {
+async function runScriptSelectionPrompt(
+  allowedScripts: ScriptSelectionType[],
+): Promise<ScriptSelectionType> {
   const result: ScriptSelectionType = await select({
     message: "Select a script to run:",
     choices: [
@@ -44,22 +40,26 @@ async function runScriptSelectionPrompt(): Promise<ScriptSelectionType> {
         name: "1. Bulk ingest documents",
         value: "BULK_INGEST",
         description: "Ingests jsonl documents from an input folder into an index",
+        disabled: !allowedScripts.includes("BULK_INGEST") ? "Not available in this environment" : false,
       },
       {
         name: "2. Create new index",
         value: "CREATE_INDEX",
         description: "Create a new index",
+        disabled: !allowedScripts.includes("CREATE_INDEX") ? "Not available in this environment" : false,
       },
       {
         name: "3. Export documents from index",
         value: "EXPORT_FROM_INDEX",
         description: "Exports documents from an index as json files",
+        disabled: !allowedScripts.includes("EXPORT_FROM_INDEX") ? "Not available in this environment" : false,
       },
       {
         name: "4. Export indices mapping",
         value: "EXPORT_INDEX_MAPPING",
         description:
           "Exports mappings from a list of indices and save them as individual json objects",
+        disabled: !allowedScripts.includes("EXPORT_INDEX_MAPPING") ? "Not available in this environment" : false,
       },
     ],
   });
@@ -131,7 +131,7 @@ async function run() {
     console.log("Connected to database:", databaseURL);
   }
 
-  const selectedScript = await runScriptSelectionPrompt();
+  const selectedScript = await runScriptSelectionPrompt(environmentConfigs[selectedEnv].allowedScripts);
   runScript(selectedScript, databaseClient);
 }
 
