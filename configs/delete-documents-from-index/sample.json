@@ -1,0 +1,10 @@
+{
+  "indices": ["sample-index"],
+  "queryBody": {
+    "query": {
+      "match": {
+        "status": "inactive"
+      }
+    }
+  }
+}

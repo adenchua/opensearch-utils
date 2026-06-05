@@ -2,16 +2,17 @@ import { checkbox, select } from "@inquirer/prompts";
 import { promises as fs } from "fs";
 import path from "path";
 
+import DatabaseClient from "./classes/DatabaseClient";
+import { AppEnvironment, environmentConfigs, ScriptSelectionType } from "./configs/environments";
 import { APP_VERSION } from "./constants";
 import DatabaseConnectionError from "./errors/DatabaseConnectionError";
 import InvalidConfigError from "./errors/InvalidConfigError";
 import bulkIngestDocuments from "./scripts/bulk-ingest";
 import createIndex from "./scripts/create-index";
+import deleteDocumentsFromIndex from "./scripts/delete-documents-from-index";
 import exportDocsFromIndex from "./scripts/export-docs-from-index";
 import exportMappingFromIndices from "./scripts/export-mapping-from-indices";
 import { createDatabaseClient } from "./singletons";
-import { AppEnvironment, environmentConfigs, ScriptSelectionType } from "./configs/environments";
-import DatabaseClient from "./classes/DatabaseClient";
 
 /** Prompts the user to select an environment */
 async function runEnvironmentSelectionPrompt(): Promise<AppEnvironment> {
@@ -40,26 +41,42 @@ async function runScriptSelectionPrompt(
         name: "1. Bulk ingest documents",
         value: "BULK_INGEST",
         description: "Ingests jsonl documents from an input folder into an index",
-        disabled: !allowedScripts.includes("BULK_INGEST") ? "Not available in this environment" : false,
+        disabled: !allowedScripts.includes("BULK_INGEST")
+          ? "Not available in this environment"
+          : false,
       },
       {
         name: "2. Create new index",
         value: "CREATE_INDEX",
         description: "Create a new index",
-        disabled: !allowedScripts.includes("CREATE_INDEX") ? "Not available in this environment" : false,
+        disabled: !allowedScripts.includes("CREATE_INDEX")
+          ? "Not available in this environment"
+          : false,
       },
       {
         name: "3. Export documents from index",
         value: "EXPORT_FROM_INDEX",
         description: "Exports documents from an index as json files",
-        disabled: !allowedScripts.includes("EXPORT_FROM_INDEX") ? "Not available in this environment" : false,
+        disabled: !allowedScripts.includes("EXPORT_FROM_INDEX")
+          ? "Not available in this environment"
+          : false,
       },
       {
         name: "4. Export indices mapping",
         value: "EXPORT_INDEX_MAPPING",
         description:
           "Exports mappings from a list of indices and save them as individual json objects",
-        disabled: !allowedScripts.includes("EXPORT_INDEX_MAPPING") ? "Not available in this environment" : false,
+        disabled: !allowedScripts.includes("EXPORT_INDEX_MAPPING")
+          ? "Not available in this environment"
+          : false,
+      },
+      {
+        name: "5. Delete documents from index",
+        value: "DELETE_DOCUMENTS_FROM_INDEX",
+        description: "Deletes documents from one or more indices using an optional query body",
+        disabled: !allowedScripts.includes("DELETE_DOCUMENTS_FROM_INDEX")
+          ? "Not available in this environment"
+          : false,
       },
     ],
   });
@@ -112,6 +129,16 @@ async function runScript(
       }
       break;
     }
+    case "DELETE_DOCUMENTS_FROM_INDEX": {
+      const selectedConfigs = await runConfigSelectionPrompt("delete-documents-from-index");
+      const total = selectedConfigs.length;
+      for (let i = 0; i < total; i++) {
+        const { filename, config } = selectedConfigs[i];
+        console.log(`\n[${i + 1}/${total}] Running: ${filename}`);
+        await deleteDocumentsFromIndex(config, databaseClient);
+      }
+      break;
+    }
     default:
       throw new InvalidConfigError();
   }
@@ -152,7 +179,9 @@ async function run() {
     console.log("Connected to database:", databaseURL);
   }
 
-  const selectedScript = await runScriptSelectionPrompt(environmentConfigs[selectedEnv].allowedScripts);
+  const selectedScript = await runScriptSelectionPrompt(
+    environmentConfigs[selectedEnv].allowedScripts,
+  );
   runScript(selectedScript, databaseClient);
 }
 

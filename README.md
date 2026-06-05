@@ -153,3 +153,22 @@ Extracts mappings from a list of provided indices and saves each mapping to a js
   "indices": ["sample-index"]
 }
 ```
+
+### (Script) Delete Documents from Index
+
+Deletes documents from one or more indices using an optional query body. When `queryBody` is omitted, all documents in the listed indices are deleted (`match_all`). The script displays the target indices and query, then requires explicit confirmation before proceeding. Not available in the `production` environment.
+
+```js
+{
+  // list of indices to delete documents from
+  "indices": ["sample-index"],
+  // (optional) OpenSearch query body to filter which documents to delete. Defaults to match_all (deletes everything)
+  "queryBody": {
+    "query": {
+      "match": {
+        "status": "inactive"
+      }
+    }
+  }
+}
+```

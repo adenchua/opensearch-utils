@@ -1,6 +1,6 @@
 # opensearch-utils
 
-A CLI toolkit for managing OpenSearch databases. Provides four interactive scripts for bulk ingesting documents, creating indices, exporting documents, and exporting index mappings. Runs entirely from the terminal using interactive prompts — no web UI.
+A CLI toolkit for managing OpenSearch databases. Provides five interactive scripts for bulk ingesting documents, creating indices, exporting documents, exporting index mappings, and deleting documents from indices. Runs entirely from the terminal using interactive prompts — no web UI.
 
 ## Quick Start
 
@@ -37,11 +37,12 @@ src/
 ├── singletons.ts          createDatabaseClient(config) factory — constructs DatabaseClient from an EnvironmentConfig
 ├── classes/
 │   ├── DatabaseClient.ts  OpenSearch connection management (BASIC_AUTH or CERTIFICATE_AUTH)
-│   ├── DatabaseService.ts High-level DB operations: addIndex, bulkIngestDocuments, bulkRetrieveDocuments, fetchIndexInfo
+│   ├── DatabaseService.ts High-level DB operations: addIndex, bulkIngestDocuments, bulkRetrieveDocuments, fetchIndexInfo, deleteDocumentsByQuery
 │   └── FileManager.ts     Static file helpers: saveAsJson, saveAsJsonLine, readJsonLine
 ├── scripts/
 │   ├── bulk-ingest/       Extract ZIP → read JSONL → chunk at 10k → bulk ingest
 │   ├── create-index/      Create index with custom mappings and analyzers
+│   ├── delete-documents-from-index/  Confirm → deleteByQuery per index
 │   ├── export-docs-from-index/   Scroll all docs → write JSONL → compress to ZIP
 │   └── export-mapping-from-indices/  Fetch index mapping+settings → save as JSON
 ├── configs/
@@ -79,6 +80,7 @@ Each script is driven by a JSON config file selected interactively at runtime. P
 |---|---|---|
 | Bulk Ingest | `configs/bulk-ingest/` | `configs/bulk-ingest/sample.json` |
 | Create Index | `configs/create-index/` | `configs/create-index/sample.json` |
+| Delete Documents | `configs/delete-documents-from-index/` | `configs/delete-documents-from-index/sample.json` |
 | Export Documents | `configs/export-from-index/` | `configs/export-from-index/sample.json` |
 | Export Mapping | `configs/export-mapping-from-indices/` | `configs/export-mapping-from-indices/sample.json` |
 

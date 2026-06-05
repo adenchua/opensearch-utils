@@ -157,4 +157,21 @@ export default class DatabaseService {
     const indexResponse = await this.databaseClient.getDatabaseClient().indices.get({ index });
     return indexResponse.body;
   }
+
+  async deleteDocumentsByQuery(
+    index: string,
+    queryBody: Search_RequestBody = { query: { match_all: {} } },
+  ): Promise<{ deleted: number }> {
+    if (index === "") {
+      throw new InvalidDatabaseIndexError();
+    }
+
+    const response = await this.databaseClient.getDatabaseClient().deleteByQuery({
+      index,
+      body: queryBody,
+    });
+
+    const responseBody = response.body as { deleted?: number };
+    return { deleted: responseBody.deleted ?? 0 };
+  }
 }
