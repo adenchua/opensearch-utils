@@ -3,8 +3,10 @@ mappings
 output
 certs
 
-/input/bulk-ingest/*
-!/input/bulk-ingest/PLACEHOLDER.txt
+
+input/bulk-ingest/*
+!input/bulk-ingest/.gitkeep
+
 
 # Logs
 logs
