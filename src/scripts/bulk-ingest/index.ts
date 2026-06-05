@@ -102,6 +102,12 @@ export default async function bulkIngestDocuments(
         documentChunk,
         documentIdOptions,
         generatedTimestampOptions,
+        (document, error) => {
+          const doc = document as Record<string, unknown>;
+          const docId = documentIdOptions ? doc[documentIdOptions.idKey] : undefined;
+          const idPart = docId != null ? `_id: ${String(docId)}` : "no _id";
+          console.error(`[bulk ingest] Document failed (${idPart}): ${error.reason}`);
+        },
       );
 
       const { failed, successful } = response;

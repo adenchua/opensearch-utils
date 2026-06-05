@@ -44,9 +44,13 @@ export default class DatabaseService {
       timestampKey: string;
       timestampFormat: ALLOWED_DATE_FORMATS_TYPE;
     },
+    onDropDocument?: (document: T, error: { type: string; reason: string }) => void,
   ): Promise<{ total: number; failed: number; successful: number }> {
     const response = await this.databaseClient.getDatabaseClient().helpers.bulk({
       datasource: documents,
+      onDrop({ document, error }) {
+        onDropDocument?.(document as T, error);
+      },
       onDocument(document: T) {
         let tempDoc: Record<string, unknown> = structuredClone(document) as Record<string, unknown>;
 
