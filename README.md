@@ -154,7 +154,7 @@ Extracts mappings from a list of provided indices and saves each mapping to a js
 }
 ```
 
-### (Script) Delete Documents from Index
+### (Script) Delete Documents from Indices
 
 Deletes documents from one or more indices using an optional query body. When `queryBody` is omitted, all documents in the listed indices are deleted (`match_all`). The script displays the target indices and query, then requires explicit confirmation before proceeding. Not available in the `production` environment.
 

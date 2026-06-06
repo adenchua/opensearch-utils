@@ -42,7 +42,7 @@ src/
 ├── scripts/
 │   ├── bulk-ingest/       Extract ZIP → read JSONL → chunk at 10k → bulk ingest
 │   ├── create-index/      Create index with custom mappings and analyzers
-│   ├── delete-documents-from-index/  Confirm → deleteByQuery per index
+│   ├── delete-documents-from-indices/  Confirm → deleteByQuery per index
 │   ├── export-docs-from-index/   Scroll all docs → write JSONL → compress to ZIP
 │   └── export-mapping-from-indices/  Fetch index mapping+settings → save as JSON
 ├── configs/
@@ -80,7 +80,7 @@ Each script is driven by a JSON config file selected interactively at runtime. P
 |---|---|---|
 | Bulk Ingest | `configs/bulk-ingest/` | `configs/bulk-ingest/sample.json` |
 | Create Index | `configs/create-index/` | `configs/create-index/sample.json` |
-| Delete Documents | `configs/delete-documents-from-index/` | `configs/delete-documents-from-index/sample.json` |
+| Delete Documents | `configs/delete-documents-from-indices/` | `configs/delete-documents-from-indices/sample.json` |
 | Export Documents | `configs/export-from-index/` | `configs/export-from-index/sample.json` |
 | Export Mapping | `configs/export-mapping-from-indices/` | `configs/export-mapping-from-indices/sample.json` |
 

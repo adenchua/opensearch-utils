@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for selecting multiple config files per script run
 - `allowedScripts` per-environment filter to restrict which scripts are available in each environment
 - Per-document failure logging in bulk ingest
-- **Delete Documents From Index** script
+- **Delete Documents From Indices** script
 
 ### CHANGED
 

@@ -9,7 +9,7 @@ import DatabaseConnectionError from "./errors/DatabaseConnectionError";
 import InvalidConfigError from "./errors/InvalidConfigError";
 import bulkIngestDocuments from "./scripts/bulk-ingest";
 import createIndex from "./scripts/create-index";
-import deleteDocumentsFromIndex from "./scripts/delete-documents-from-index";
+import deleteDocumentsFromIndices from "./scripts/delete-documents-from-indices";
 import exportDocsFromIndex from "./scripts/export-docs-from-index";
 import exportMappingFromIndices from "./scripts/export-mapping-from-indices";
 import { createDatabaseClient } from "./singletons";
@@ -71,10 +71,10 @@ async function runScriptSelectionPrompt(
           : false,
       },
       {
-        name: "5. Delete documents from index",
-        value: "DELETE_DOCUMENTS_FROM_INDEX",
+        name: "5. Delete documents from indices",
+        value: "DELETE_DOCUMENTS_FROM_INDICES",
         description: "Deletes documents from one or more indices using an optional query body",
-        disabled: !allowedScripts.includes("DELETE_DOCUMENTS_FROM_INDEX")
+        disabled: !allowedScripts.includes("DELETE_DOCUMENTS_FROM_INDICES")
           ? "Not available in this environment"
           : false,
       },
@@ -129,13 +129,13 @@ async function runScript(
       }
       break;
     }
-    case "DELETE_DOCUMENTS_FROM_INDEX": {
-      const selectedConfigs = await runConfigSelectionPrompt("delete-documents-from-index");
+    case "DELETE_DOCUMENTS_FROM_INDICES": {
+      const selectedConfigs = await runConfigSelectionPrompt("delete-documents-from-indices");
       const total = selectedConfigs.length;
       for (let i = 0; i < total; i++) {
         const { filename, config } = selectedConfigs[i];
         console.log(`\n[${i + 1}/${total}] Running: ${filename}`);
-        await deleteDocumentsFromIndex(config, databaseClient);
+        await deleteDocumentsFromIndices(config, databaseClient);
       }
       break;
     }

@@ -2,10 +2,10 @@ import { confirm } from "@inquirer/prompts";
 
 import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
-import DeleteDocumentsFromIndexOptions from "./interfaces";
+import DeleteDocumentsFromIndicesOptions from "./interfaces";
 
-export default async function deleteDocumentsFromIndex(
-  options: DeleteDocumentsFromIndexOptions,
+export default async function deleteDocumentsFromIndices(
+  options: DeleteDocumentsFromIndicesOptions,
   databaseClient: DatabaseClient,
 ): Promise<void> {
   const { indices, queryBody = { query: { match_all: {} } } } = options;
