@@ -103,14 +103,14 @@ Creates an index in the database.
 
 ### (Script) Bulk Ingest Documents
 
-Takes in a zipped folder of [`jsonl`](https://jsonlines.org/) files and ingests to an index. The ZIP must be placed under `./input/bulk-ingest/` and can be nested in subdirectories (e.g. `./input/bulk-ingest/uat/sample.zip`).
+Takes in one or more zipped folders of [`jsonl`](https://jsonlines.org/) files and ingests to an index. Each ZIP must be placed under `./input/bulk-ingest/` and can be nested in subdirectories (e.g. `./input/bulk-ingest/uat/sample.zip`). ZIPs are processed sequentially; a failed ZIP is skipped with an error log and the remaining ZIPs continue.
 
 ```js
 {
   // ingests the jsons to this index name
   "indexName": "sample-index",
-  // relative path to the zip file within /input/bulk-ingest/. supports subdirectories, e.g. "uat/sample.zip"
-  "inputZipPath": "sample.zip",
+  // array of relative paths to zip files within /input/bulk-ingest/. supports subdirectories, e.g. "uat/sample.zip"
+  "inputZipPaths": ["sample.zip"],
   "documentIdOptions": {
     // When "documentIdOptions" is defined, this value must be provided. Denotes the primary key field of the document and set that field value to _id in OpenSearch.
     "idKey": "id",

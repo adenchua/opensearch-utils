@@ -4,10 +4,7 @@ import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
 import CreateIndexOption from "./interfaces";
 
-export default async function createIndex(
-  options: CreateIndexOption,
-  databaseClient: DatabaseClient,
-): Promise<void> {
+export default async function createIndex(options: CreateIndexOption, databaseClient: DatabaseClient): Promise<void> {
   const {
     indexName,
     indexKnn = false,

@@ -86,7 +86,7 @@ Each script is driven by a JSON config file selected interactively at runtime. P
 
 See the `interfaces.ts` in each script folder for the exact config shape.
 
-For bulk ingest, place input ZIP files (containing JSONL files) in `input/bulk-ingest/`. Subdirectories are supported — set `inputZipPath` to a relative path such as `"uat/sample.zip"`.
+For bulk ingest, place input ZIP files (containing JSONL files) in `input/bulk-ingest/`. Subdirectories are supported — set `inputZipPaths` to an array of relative paths such as `["uat/sample.zip"]`. Multiple ZIPs are processed sequentially; a failed ZIP is skipped and the rest continue.
 
 ## Adding a New Script
 

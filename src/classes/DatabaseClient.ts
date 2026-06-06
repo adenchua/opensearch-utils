@@ -29,17 +29,11 @@ export default class DatabaseClient {
     this.databaseUrl = databaseUrl;
 
     if (authenticationMethod === "BASIC_AUTH" && !basicAuthFilepath) {
-      throw new Error(
-        "Authentication method is set to BASIC_AUTH, but BASIC_AUTH_FILE_PATH is not provided",
-      );
+      throw new Error("Authentication method is set to BASIC_AUTH, but BASIC_AUTH_FILE_PATH is not provided");
     }
 
     if (authenticationMethod === "BASIC_AUTH" && basicAuthFilepath) {
-      this.databaseClient = this.getBasicAuthClient(
-        basicAuthFilepath,
-        rootCAFilepath,
-        rejectUnauthorized,
-      );
+      this.databaseClient = this.getBasicAuthClient(basicAuthFilepath, rootCAFilepath, rejectUnauthorized);
       return;
     }
 
@@ -58,11 +52,7 @@ export default class DatabaseClient {
     );
   }
 
-  private getBasicAuthClient(
-    basicAuthFilepath: string,
-    rootCAFilepath?: string,
-    rejectUnauthorized = true,
-  ): Client {
+  private getBasicAuthClient(basicAuthFilepath: string, rootCAFilepath?: string, rejectUnauthorized = true): Client {
     const credentials = fs.readFileSync(basicAuthFilepath, { encoding: "utf8" });
     const [username, password] = credentials.split(":");
     return new Client({

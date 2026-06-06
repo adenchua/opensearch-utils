@@ -54,16 +54,11 @@ export default async function exportDocsFromIndex(
   let counter = 1;
   const filename = uuidv4();
   for (const chunkedDocuments of chunkedDocumentsList) {
-    await FileManager.saveAsJsonLine(
-      chunkedDocuments,
-      path.join(outputFullPath, `${filename}-${counter}.jsonl`),
-    );
+    await FileManager.saveAsJsonLine(chunkedDocuments, path.join(outputFullPath, `${filename}-${counter}.jsonl`));
     counter++;
   }
 
   await zipFolder(outputFullPath, outputFullPath);
   removeDir(outputFullPath); // remove the unzipped folder
-  console.log(
-    `Successfully exported data from index ${indexName}! File stored at: ${outputFullPath}.zip`,
-  );
+  console.log(`Successfully exported data from index ${indexName}! File stored at: ${outputFullPath}.zip`);
 }
