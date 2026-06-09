@@ -1,6 +1,6 @@
 {
   "name": "opensearch-utils",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "type": "module",
   "description": "Unlock the full potential of your OpenSearch database with our Swiss Army-like toolset, designed for developers, data engineers, and database administrators. This versatile toolkit offers a comprehensive suite of features that streamline database management, optimize performance, and enhance your data querying capabilities.",
   "main": "index.ts",

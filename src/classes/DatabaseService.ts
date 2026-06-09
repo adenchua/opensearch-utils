@@ -136,14 +136,16 @@ export default class DatabaseService {
       if (totalDocumentCount === result.length) {
         console.log(`Retrieved all documents from ${index}!`);
         await this.databaseClient.getDatabaseClient().clearScroll({
-          scroll_id: scrollId,
+          body: { scroll_id: scrollId },
         }); // closes the scroll context, do not wait until timeout
         return result;
       }
 
       const nextScrollResponse = await this.databaseClient.getDatabaseClient().scroll({
-        scroll_id: scrollId,
-        scroll: scrollWindowTimeout,
+        body: {
+          scroll_id: scrollId,
+          scroll: scrollWindowTimeout,
+        },
       });
 
       // get the next response if there are more documents to fetch
