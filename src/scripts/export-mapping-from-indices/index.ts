@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
 import FileManager from "../../classes/FileManager";
+import InvalidConfigError from "../../errors/InvalidConfigError";
 import { getOutputFolderPath, removeDir, zipFolder } from "../../utils/folderUtils";
 import ExportMappingFromIndicesOptions from "./interfaces";
 
@@ -26,6 +27,13 @@ export default async function exportMappingFromIndices(
 ): Promise<void> {
   const { indices } = options;
   const databaseService = new DatabaseService(databaseClient);
+
+  if (!indices || !Array.isArray(indices) || indices.length === 0) {
+    throw new InvalidConfigError("Config field 'indices' must be a non-empty array");
+  }
+  if (indices.some((i) => !i)) {
+    throw new InvalidConfigError("Config field 'indices' must not contain empty strings");
+  }
 
   const filename = uuidv4();
   const outputFolderPath = getOutputFolderPath("export-index-mapping");

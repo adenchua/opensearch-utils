@@ -102,6 +102,8 @@ For bulk ingest, place input ZIP files (containing JSONL files) in `input/bulk-i
 
 If the script reads or writes files, use `FileManager` (static methods). For database operations, instantiate `DatabaseService` with the `databaseClient` singleton.
 
+At the top of the script function (before any database calls), validate required config fields and throw `InvalidConfigError` with a descriptive message. Config field names are not enforced at runtime — a misspelled key silently becomes `undefined`. At minimum, validate any `indexName` (non-empty string) or `indices` (non-empty array of non-empty strings) fields. See `src/scripts/export-docs-from-index/index.ts` for the `indexName` pattern and `src/scripts/export-mapping-from-indices/index.ts` for the `indices` pattern.
+
 ## Conventions
 
 - **TypeScript strict mode** — all types must be explicit; no `any`

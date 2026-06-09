@@ -2,6 +2,7 @@ import { confirm } from "@inquirer/prompts";
 
 import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
+import InvalidConfigError from "../../errors/InvalidConfigError";
 import DeleteDocumentsFromIndicesOptions from "./interfaces";
 
 export default async function deleteDocumentsFromIndices(
@@ -10,6 +11,13 @@ export default async function deleteDocumentsFromIndices(
 ): Promise<void> {
   const { indices, queryBody = { query: { match_all: {} } } } = options;
   const databaseService = new DatabaseService(databaseClient);
+
+  if (!indices || !Array.isArray(indices) || indices.length === 0) {
+    throw new InvalidConfigError("Config field 'indices' must be a non-empty array");
+  }
+  if (indices.some((i) => !i)) {
+    throw new InvalidConfigError("Config field 'indices' must not contain empty strings");
+  }
 
   console.log("\nIndices to delete by query:");
   indices.forEach((index) => console.log(`  - ${index}`));

@@ -2,6 +2,7 @@ import { Indices_Create_RequestBody } from "@opensearch-project/opensearch/api/i
 
 import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
+import InvalidConfigError from "../../errors/InvalidConfigError";
 import CreateIndexOption from "./interfaces";
 
 export default async function createIndex(options: CreateIndexOption, databaseClient: DatabaseClient): Promise<void> {
@@ -18,6 +19,10 @@ export default async function createIndex(options: CreateIndexOption, databaseCl
     aliases = {},
   } = options;
   const databaseService = new DatabaseService(databaseClient);
+
+  if (!indexName) {
+    throw new InvalidConfigError("Config field 'indexName' is required and must be a non-empty string");
+  }
 
   const indexSettings: Indices_Create_RequestBody = {
     settings: {

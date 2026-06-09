@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
 import FileManager from "../../classes/FileManager";
+import InvalidConfigError from "../../errors/InvalidConfigError";
 import { getOutputFolderPath, removeDir, zipFolder } from "../../utils/folderUtils";
 import ExportFromIndexOptions from "./interfaces";
 
@@ -20,6 +21,10 @@ export default async function exportDocsFromIndex(
     scrollWindowTimeout = "1m",
   } = options;
   const databaseService = new DatabaseService(databaseClient);
+
+  if (!indexName) {
+    throw new InvalidConfigError("Config field 'indexName' is required and must be a non-empty string");
+  }
 
   const foldername = `${indexName}--${uuidv4()}`;
   const outputFolderPath = getOutputFolderPath("export-from-index");

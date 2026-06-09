@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.7.1] - 2026-06-09
 
+### CHANGED
+
+- protection clause to all scripts to check if `indexName` or `indices` is provided
+
 ### FIXED
 
 - **Export Documents from Index** script throwing scroll context API error
