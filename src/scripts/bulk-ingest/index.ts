@@ -109,7 +109,7 @@ export default async function bulkIngestDocuments(
     } catch (error) {
       console.error(`[${i + 1}/${inputZipPaths.length}] Failed to process ${zipFilePath}:`, error);
     } finally {
-      removeDir(tempProcessingFilePath);
+      await removeDir(tempProcessingFilePath);
     }
   }
 }

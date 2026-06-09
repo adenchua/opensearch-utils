@@ -1,16 +1,12 @@
-import fsSync from "fs";
+import { promises as fs } from "fs";
 import path from "path";
 import { COMPRESSION_LEVEL, zip } from "zip-a-folder";
 
 import { getTodayDatePrettyFormat } from "./dateUtils";
 
 // Deletes an existing directory
-export function removeDir(directory: string) {
-  fsSync.rm(directory, { recursive: true, force: true }, (error) => {
-    if (error) {
-      throw error;
-    }
-  });
+export async function removeDir(directory: string): Promise<void> {
+  await fs.rm(directory, { recursive: true, force: true });
 }
 
 // Zips a folder from the source to destination directory

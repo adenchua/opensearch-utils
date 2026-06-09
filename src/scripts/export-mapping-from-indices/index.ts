@@ -65,7 +65,7 @@ export default async function exportMappingFromIndices(
   }
 
   await zipFolder(outputFullPath, outputFullPath);
-  removeDir(outputFullPath);
+  await removeDir(outputFullPath);
 
   console.log(`Successfully exported mappings! File stored at: ${outputFullPath}.zip`);
 }

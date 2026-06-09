@@ -64,6 +64,6 @@ export default async function exportDocsFromIndex(
   }
 
   await zipFolder(outputFullPath, outputFullPath);
-  removeDir(outputFullPath); // remove the unzipped folder
+  await removeDir(outputFullPath); // remove the unzipped folder
   console.log(`Successfully exported data from index ${indexName}! File stored at: ${outputFullPath}.zip`);
 }
