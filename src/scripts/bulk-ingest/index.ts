@@ -2,6 +2,7 @@ import decompress from "decompress";
 import { promises as fs } from "fs";
 import _ from "lodash";
 import path from "path";
+import { v4 as uuidv4 } from "uuid";
 
 import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
@@ -57,10 +58,11 @@ export default async function bulkIngestDocuments(
     }
   }
 
-  const tempProcessingFilePath = path.join(srcFolderPath, "temp");
+  const cleanupPromises: Array<Promise<void>> = [];
 
   for (const [i, zipPath] of inputZipPaths.entries()) {
     const zipFilePath = path.join(srcFolderPath, zipPath);
+    const tempProcessingFilePath = path.join(srcFolderPath, `temp-${uuidv4()}`);
     try {
       console.log(`[${i + 1}/${inputZipPaths.length}] Extracting from ${zipFilePath}...`);
 
@@ -109,7 +111,13 @@ export default async function bulkIngestDocuments(
     } catch (error) {
       console.error(`[${i + 1}/${inputZipPaths.length}] Failed to process ${zipFilePath}:`, error);
     } finally {
-      await removeDir(tempProcessingFilePath);
+      cleanupPromises.push(
+        removeDir(tempProcessingFilePath).catch((error) =>
+          console.error(`Failed to clean up ${tempProcessingFilePath}:`, error),
+        ),
+      );
     }
   }
+
+  await Promise.all(cleanupPromises);
 }
