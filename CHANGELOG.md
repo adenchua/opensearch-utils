@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.2] - 2026-06-12
+
+### ADDED
+
+- Zod schema validation for all script configs — replaces manual field checks with typed schemas that catch wrong value types, not just missing values
+- Config errors now include field-level paths and messages (e.g. `scrollSize: Expected number, received string`)
+
+### CHANGED
+
+- Each script's `interfaces.ts` now exports a Zod schema alongside the inferred TypeScript type, making the schema the single source of truth for both runtime validation and static typing
+- Bulk ingest now uses a unique temp folder per ZIP file to prevent conflicts when processing multiple ZIPs concurrently; temp folder cleanup is deferred and run in parallel after all ZIPs complete
+
+### CHORE
+
+- ESLint upgraded to strict + stylistic type-checked rules; various code quality improvements across scripts and utility classes
+
 ## [1.7.1] - 2026-06-09
 
 ### CHANGED

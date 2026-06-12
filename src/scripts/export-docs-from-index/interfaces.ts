@@ -1,8 +1,11 @@
-import { Search_RequestBody } from "@opensearch-project/opensearch/api/index.js";
+import { z } from "zod";
 
-export default interface ExportFromIndexOptions {
-  indexName: string;
-  searchQuery?: Search_RequestBody;
-  scrollSize?: number;
-  scrollWindowTimeout?: string;
-}
+export const ExportFromIndexSchema = z.object({
+  indexName: z.string().min(1),
+  searchQuery: z.record(z.string(), z.unknown()).optional(),
+  scrollSize: z.number().int().positive().optional(),
+  scrollWindowTimeout: z.string().optional(),
+});
+
+type ExportFromIndexOptions = z.infer<typeof ExportFromIndexSchema>;
+export default ExportFromIndexOptions;

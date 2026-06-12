@@ -1,3 +1,4 @@
+import { Search_RequestBody } from "@opensearch-project/opensearch/api/index.js";
 import { promises as fs, default as fsSync } from "fs";
 import _ from "lodash";
 import path from "path";
@@ -8,23 +9,26 @@ import DatabaseService from "../../classes/DatabaseService";
 import { saveAsJsonLine } from "../../classes/FileManager";
 import InvalidConfigError from "../../errors/InvalidConfigError";
 import { getOutputFolderPath, removeDir, zipFolder } from "../../utils/folderUtils";
-import ExportFromIndexOptions from "./interfaces";
+import ExportFromIndexOptions, { ExportFromIndexSchema } from "./interfaces";
 
 export default async function exportDocsFromIndex(
   options: ExportFromIndexOptions,
   databaseClient: DatabaseClient,
 ): Promise<void> {
+  const parseResult = ExportFromIndexSchema.safeParse(options);
+  if (!parseResult.success) {
+    throw new InvalidConfigError(
+      parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
+    );
+  }
   const {
     indexName,
-    searchQuery = { query: { match_all: {} } },
+    searchQuery,
     scrollSize = 500,
     scrollWindowTimeout = "1m",
-  } = options;
+  } = parseResult.data;
+  const resolvedSearchQuery = (searchQuery ?? { query: { match_all: {} } }) as Search_RequestBody;
   const databaseService = new DatabaseService(databaseClient);
-
-  if (!indexName) {
-    throw new InvalidConfigError("Config field 'indexName' is required and must be a non-empty string");
-  }
 
   const foldername = `${indexName}--${uuidv4()}`;
   const outputFolderPath = getOutputFolderPath("export-from-index");
@@ -34,7 +38,7 @@ export default async function exportDocsFromIndex(
 
   const documents = await databaseService.bulkRetrieveDocuments(
     indexName,
-    searchQuery,
+    resolvedSearchQuery,
     scrollSize,
     scrollWindowTimeout,
   );

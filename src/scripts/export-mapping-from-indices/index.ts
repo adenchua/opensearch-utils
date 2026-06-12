@@ -11,7 +11,7 @@ import DatabaseService from "../../classes/DatabaseService";
 import { saveAsJson } from "../../classes/FileManager";
 import InvalidConfigError from "../../errors/InvalidConfigError";
 import { getOutputFolderPath, removeDir, zipFolder } from "../../utils/folderUtils";
-import ExportMappingFromIndicesOptions from "./interfaces";
+import ExportMappingFromIndicesOptions, { ExportMappingFromIndicesSchema } from "./interfaces";
 
 /**
  * Opensearch settings/mappings response body's first key is the index name
@@ -25,15 +25,14 @@ export default async function exportMappingFromIndices(
   options: ExportMappingFromIndicesOptions,
   databaseClient: DatabaseClient,
 ): Promise<void> {
-  const { indices } = options;
+  const parseResult = ExportMappingFromIndicesSchema.safeParse(options);
+  if (!parseResult.success) {
+    throw new InvalidConfigError(
+      parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
+    );
+  }
+  const { indices } = parseResult.data;
   const databaseService = new DatabaseService(databaseClient);
-
-  if (!indices || indices.length === 0) {
-    throw new InvalidConfigError("Config field 'indices' must be a non-empty array");
-  }
-  if (indices.some((i) => !i)) {
-    throw new InvalidConfigError("Config field 'indices' must not contain empty strings");
-  }
 
   const filename = uuidv4();
   const outputFolderPath = getOutputFolderPath("export-index-mapping");

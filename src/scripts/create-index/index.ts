@@ -1,11 +1,18 @@
+import { Analyzer } from "@opensearch-project/opensearch/api/_types/_common.analysis.js";
 import { Indices_Create_RequestBody } from "@opensearch-project/opensearch/api/index.js";
 
 import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
 import InvalidConfigError from "../../errors/InvalidConfigError";
-import CreateIndexOption from "./interfaces";
+import CreateIndexOption, { CreateIndexSchema } from "./interfaces";
 
 export default async function createIndex(options: CreateIndexOption, databaseClient: DatabaseClient): Promise<void> {
+  const parseResult = CreateIndexSchema.safeParse(options);
+  if (!parseResult.success) {
+    throw new InvalidConfigError(
+      parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
+    );
+  }
   const {
     indexName,
     indexKnn = false,
@@ -15,14 +22,10 @@ export default async function createIndex(options: CreateIndexOption, databaseCl
     analysis,
     shardCount = 1,
     replicaCount = 1,
-    mappings = {},
-    aliases = {},
-  } = options;
+    mappings,
+    aliases,
+  } = parseResult.data;
   const databaseService = new DatabaseService(databaseClient);
-
-  if (!indexName) {
-    throw new InvalidConfigError("Config field 'indexName' is required and must be a non-empty string");
-  }
 
   const indexSettings: Indices_Create_RequestBody = {
     settings: {
@@ -34,10 +37,10 @@ export default async function createIndex(options: CreateIndexOption, databaseCl
       search: {
         default_pipeline: search?.defaultPipeline,
       },
-      analysis,
+      analysis: analysis as { analyzer?: Record<string, Analyzer> } | undefined,
     },
-    mappings,
-    aliases,
+    mappings: mappings ?? {},
+    aliases: (aliases ?? {}) as Record<string, object>,
   };
 
   await databaseService.addIndex(indexName, indexSettings);

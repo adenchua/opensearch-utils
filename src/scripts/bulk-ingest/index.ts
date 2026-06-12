@@ -7,39 +7,28 @@ import { v4 as uuidv4 } from "uuid";
 import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
 import { readJsonLine } from "../../classes/FileManager";
-import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../../constants";
+import { DEFAULT_DATE_FORMAT } from "../../constants";
 import InvalidConfigError from "../../errors/InvalidConfigError";
 import { ALLOWED_DATE_FORMATS_TYPE } from "../../types/dateUtilsTypes";
 import { removeDir } from "../../utils/folderUtils";
-import BulkIngestDocumentsOption from "./interfaces";
+import BulkIngestDocumentsOption, { BulkIngestDocumentsSchema } from "./interfaces";
 
 export default async function bulkIngestDocuments(
   options: BulkIngestDocumentsOption,
   srcFolderPath: string,
   databaseClient: DatabaseClient,
 ): Promise<void> {
-  const { indexName, inputZipPaths, documentIdOptions, generatedTimestampOptions } = options;
+  const parseResult = BulkIngestDocumentsSchema.safeParse(options);
+  if (!parseResult.success) {
+    throw new InvalidConfigError(
+      parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
+    );
+  }
+  const { indexName, inputZipPaths, documentIdOptions, generatedTimestampOptions } = parseResult.data;
   const databaseService = new DatabaseService(databaseClient);
-
-  if (!indexName) {
-    throw new InvalidConfigError("indexName is required");
-  }
-
-  if (!inputZipPaths || inputZipPaths.length === 0) {
-    throw new InvalidConfigError("inputZipPaths must not be an empty array");
-  }
-
-  if (inputZipPaths.some((p) => !p)) {
-    throw new InvalidConfigError("inputZipPaths must not contain empty strings");
-  }
 
   let resolvedDocIdOptions: { idKey: string; removeIdFromDocs: boolean } | undefined;
   if (documentIdOptions) {
-    if (!documentIdOptions.idKey) {
-      throw new InvalidConfigError(
-        "A documentIdOptions.idKey is required for generation of a custom primary key",
-      );
-    }
     resolvedDocIdOptions = {
       idKey: documentIdOptions.idKey,
       removeIdFromDocs: documentIdOptions.removeIdFromDocs ?? true,
@@ -51,13 +40,8 @@ export default async function bulkIngestDocuments(
     | undefined;
   if (generatedTimestampOptions) {
     const { timestampFormat, timestampKey } = generatedTimestampOptions;
-    if (timestampFormat && !(ALLOWED_DATE_FORMATS as readonly string[]).includes(timestampFormat)) {
-      throw new InvalidConfigError(
-        "Unsupported date format provided for generatedTimestampOptions.timestampFormat",
-      );
-    }
     resolvedTimestampOptions = {
-      timestampFormat: (timestampFormat ?? DEFAULT_DATE_FORMAT) as ALLOWED_DATE_FORMATS_TYPE,
+      timestampFormat: timestampFormat ?? DEFAULT_DATE_FORMAT,
       timestampKey: timestampKey ?? "@timestamp",
     };
   }
