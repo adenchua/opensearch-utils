@@ -1,4 +1,4 @@
 export default interface ExportMappingFromIndicesOptions {
-  indices: string[];
+  indices?: string[];
   outputFilename?: string;
 }

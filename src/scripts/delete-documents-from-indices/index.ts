@@ -12,7 +12,7 @@ export default async function deleteDocumentsFromIndices(
   const { indices, queryBody = { query: { match_all: {} } } } = options;
   const databaseService = new DatabaseService(databaseClient);
 
-  if (!indices || !Array.isArray(indices) || indices.length === 0) {
+  if (!indices || indices.length === 0) {
     throw new InvalidConfigError("Config field 'indices' must be a non-empty array");
   }
   if (indices.some((i) => !i)) {
@@ -20,7 +20,7 @@ export default async function deleteDocumentsFromIndices(
   }
 
   console.log("\nIndices to delete by query:");
-  indices.forEach((index) => console.log(`  - ${index}`));
+  indices.forEach((index) => { console.log(`  - ${index}`); });
   console.log("\nQuery body:");
   console.log(JSON.stringify(queryBody, null, 2));
 
@@ -37,6 +37,6 @@ export default async function deleteDocumentsFromIndices(
   for (const index of indices) {
     console.log(`\nDeleting documents from index: ${index}...`);
     const { deleted } = await databaseService.deleteDocumentsByQuery(index, queryBody);
-    console.log(`Deleted ${deleted} document(s) from ${index}.`);
+    console.log(`Deleted ${String(deleted)} document(s) from ${index}.`);
   }
 }

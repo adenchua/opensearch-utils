@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
-import FileManager from "../../classes/FileManager";
+import { saveAsJson } from "../../classes/FileManager";
 import InvalidConfigError from "../../errors/InvalidConfigError";
 import { getOutputFolderPath, removeDir, zipFolder } from "../../utils/folderUtils";
 import ExportMappingFromIndicesOptions from "./interfaces";
@@ -18,7 +18,7 @@ import ExportMappingFromIndicesOptions from "./interfaces";
  * This function extracts that index name to be used to obtain the actual settings/mappings
  */
 function getIndexName(obj: Indices_GetSettings_ResponseBody | Indices_GetMapping_ResponseBody) {
-  return obj && Object.keys(obj).length > 0 ? Object.keys(obj)[0] : null;
+  return Object.keys(obj).length > 0 ? Object.keys(obj)[0] : null;
 }
 
 export default async function exportMappingFromIndices(
@@ -28,7 +28,7 @@ export default async function exportMappingFromIndices(
   const { indices } = options;
   const databaseService = new DatabaseService(databaseClient);
 
-  if (!indices || !Array.isArray(indices) || indices.length === 0) {
+  if (!indices || indices.length === 0) {
     throw new InvalidConfigError("Config field 'indices' must be a non-empty array");
   }
   if (indices.some((i) => !i)) {
@@ -61,7 +61,7 @@ export default async function exportMappingFromIndices(
       aliases: response[indexName].aliases,
     };
 
-    await FileManager.saveAsJson(output, path.join(outputFullPath, `${index}.json`));
+    await saveAsJson(output, path.join(outputFullPath, `${index}.json`));
   }
 
   await zipFolder(outputFullPath, outputFullPath);

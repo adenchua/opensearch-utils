@@ -35,7 +35,7 @@ export default class DatabaseService {
   // Bulk ingests documents into an index
   async bulkIngestDocuments<T>(
     indexName: string,
-    documents: Array<T>,
+    documents: T[],
     documentIdOptions?: {
       idKey: string;
       removeIdFromDocs: boolean;
@@ -49,7 +49,7 @@ export default class DatabaseService {
     const response = await this.databaseClient.getDatabaseClient().helpers.bulk({
       datasource: documents,
       onDrop({ document, error }) {
-        onDropDocument?.(document as T, error);
+        onDropDocument?.(document, error);
       },
       onDocument(document: T) {
         let tempDoc: Record<string, unknown> = structuredClone(document) as Record<string, unknown>;
@@ -66,6 +66,7 @@ export default class DatabaseService {
           const documentId = tempDoc[idKey];
           // delete ID key from doc
           if (removeIdFromDocs) {
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
             delete tempDoc[idKey];
           }
 
@@ -96,11 +97,11 @@ export default class DatabaseService {
   async bulkRetrieveDocuments(
     index: string,
     searchQuery: Search_RequestBody = { query: { match_all: {} } },
-    scrollSize: number = 500,
-    scrollWindowTimeout: string = "10m",
+    scrollSize = 500,
+    scrollWindowTimeout = "10m",
   ) {
-    const responseQueue: Array<Search_ResponseBody> = [];
-    const result: Array<object> = [];
+    const responseQueue: Search_ResponseBody[] = [];
+    const result: object[] = [];
 
     if (index === "") {
       throw new InvalidDatabaseIndexError();
@@ -128,7 +129,7 @@ export default class DatabaseService {
 
       responseBody.hits.hits.forEach(function (hit: Hit) {
         const document = structuredClone(hit._source) as Record<string, unknown>;
-        document["_id"] = hit._id; // push the internal document ID
+        document._id = hit._id; // push the internal document ID
         result.push(document);
       });
 
@@ -151,7 +152,7 @@ export default class DatabaseService {
       // get the next response if there are more documents to fetch
       responseQueue.push(nextScrollResponse.body);
 
-      console.log(`Retrieved ${result.length}/${totalDocumentCount} documents from ${index}...`);
+      console.log(`Retrieved ${String(result.length)}/${String(totalDocumentCount)} documents from ${index}...`);
     }
   }
 

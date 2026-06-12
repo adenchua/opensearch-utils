@@ -15,5 +15,5 @@ export default interface CreateIndexOption {
     analyzer?: Record<string, Analyzer>;
   };
   mappings?: Indices_Create_RequestBody["mappings"];
-  aliases?: { [key: string]: object };
+  aliases?: Record<string, object>;
 }

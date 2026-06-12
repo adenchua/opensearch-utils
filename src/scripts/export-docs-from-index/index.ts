@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
-import FileManager from "../../classes/FileManager";
+import { saveAsJsonLine } from "../../classes/FileManager";
 import InvalidConfigError from "../../errors/InvalidConfigError";
 import { getOutputFolderPath, removeDir, zipFolder } from "../../utils/folderUtils";
 import ExportFromIndexOptions from "./interfaces";
@@ -41,7 +41,7 @@ export default async function exportDocsFromIndex(
 
   console.log("Preparing to zip...");
 
-  if (documents && documents.length === 0) {
+  if (documents?.length === 0) {
     throw new Error("No documents in index!");
   }
 
@@ -59,7 +59,7 @@ export default async function exportDocsFromIndex(
   let counter = 1;
   const filename = uuidv4();
   for (const chunkedDocuments of chunkedDocumentsList) {
-    await FileManager.saveAsJsonLine(chunkedDocuments, path.join(outputFullPath, `${filename}-${counter}.jsonl`));
+    await saveAsJsonLine(chunkedDocuments, path.join(outputFullPath, `${filename}-${String(counter)}.jsonl`));
     counter++;
   }
 

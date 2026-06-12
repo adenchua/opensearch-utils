@@ -6,8 +6,10 @@ import { v4 as uuidv4 } from "uuid";
 
 import DatabaseClient from "../../classes/DatabaseClient";
 import DatabaseService from "../../classes/DatabaseService";
-import FileManager from "../../classes/FileManager";
+import { readJsonLine } from "../../classes/FileManager";
 import { ALLOWED_DATE_FORMATS, DEFAULT_DATE_FORMAT } from "../../constants";
+import InvalidConfigError from "../../errors/InvalidConfigError";
+import { ALLOWED_DATE_FORMATS_TYPE } from "../../types/dateUtilsTypes";
 import { removeDir } from "../../utils/folderUtils";
 import BulkIngestDocumentsOption from "./interfaces";
 
@@ -20,64 +22,70 @@ export default async function bulkIngestDocuments(
   const databaseService = new DatabaseService(databaseClient);
 
   if (!indexName) {
-    throw new Error("indexName is required");
+    throw new InvalidConfigError("indexName is required");
   }
 
   if (!inputZipPaths || inputZipPaths.length === 0) {
-    throw new Error("inputZipPaths must not be an empty array");
+    throw new InvalidConfigError("inputZipPaths must not be an empty array");
   }
 
-  if (inputZipPaths.some((p) => p === "")) {
-    throw new Error("inputZipPaths must not contain empty strings");
+  if (inputZipPaths.some((p) => !p)) {
+    throw new InvalidConfigError("inputZipPaths must not contain empty strings");
   }
 
+  let resolvedDocIdOptions: { idKey: string; removeIdFromDocs: boolean } | undefined;
   if (documentIdOptions) {
-    const { idKey } = documentIdOptions;
-    if (idKey == undefined) {
-      throw new Error("A documentIdOptions.idKey is required for generation of a custom primary key");
+    if (!documentIdOptions.idKey) {
+      throw new InvalidConfigError(
+        "A documentIdOptions.idKey is required for generation of a custom primary key",
+      );
     }
+    resolvedDocIdOptions = {
+      idKey: documentIdOptions.idKey,
+      removeIdFromDocs: documentIdOptions.removeIdFromDocs ?? true,
+    };
   }
 
+  let resolvedTimestampOptions:
+    | { timestampKey: string; timestampFormat: ALLOWED_DATE_FORMATS_TYPE }
+    | undefined;
   if (generatedTimestampOptions) {
-    const { timestampFormat } = generatedTimestampOptions;
-    if (timestampFormat && !ALLOWED_DATE_FORMATS.includes(timestampFormat)) {
-      throw new Error("Unsupported date format provided for generatedTimestampOptions.timestampFormat");
+    const { timestampFormat, timestampKey } = generatedTimestampOptions;
+    if (timestampFormat && !(ALLOWED_DATE_FORMATS as readonly string[]).includes(timestampFormat)) {
+      throw new InvalidConfigError(
+        "Unsupported date format provided for generatedTimestampOptions.timestampFormat",
+      );
     }
+    resolvedTimestampOptions = {
+      timestampFormat: (timestampFormat ?? DEFAULT_DATE_FORMAT) as ALLOWED_DATE_FORMATS_TYPE,
+      timestampKey: timestampKey ?? "@timestamp",
+    };
   }
 
-  if (documentIdOptions && documentIdOptions.removeIdFromDocs == undefined) {
-    documentIdOptions.removeIdFromDocs = true;
-  }
-
-  if (generatedTimestampOptions) {
-    if (generatedTimestampOptions.timestampFormat == undefined) {
-      generatedTimestampOptions.timestampFormat = DEFAULT_DATE_FORMAT;
-    }
-    if (generatedTimestampOptions.timestampKey == undefined) {
-      generatedTimestampOptions.timestampKey = "@timestamp";
-    }
-  }
-
-  const cleanupPromises: Array<Promise<void>> = [];
+  const cleanupPromises: Promise<void>[] = [];
 
   for (const [i, zipPath] of inputZipPaths.entries()) {
     const zipFilePath = path.join(srcFolderPath, zipPath);
     const tempProcessingFilePath = path.join(srcFolderPath, `temp-${uuidv4()}`);
     try {
-      console.log(`[${i + 1}/${inputZipPaths.length}] Extracting from ${zipFilePath}...`);
+      console.log(
+        `[${String(i + 1)}/${String(inputZipPaths.length)}] Extracting from ${zipFilePath}...`,
+      );
 
-      await fs.access(zipFilePath).catch((error) => console.error(error));
+      await fs.access(zipFilePath).catch((error: unknown) => {
+        console.error(error);
+      });
       await decompress(zipFilePath, tempProcessingFilePath);
 
-      const documents: Array<object> = [];
+      const documents: object[] = [];
       const filenames = await fs.readdir(tempProcessingFilePath);
       for (const filename of filenames) {
         const filepath = path.join(tempProcessingFilePath, filename);
-        const tempDocuments = await FileManager.readJsonLine(filepath);
+        const tempDocuments = await readJsonLine(filepath);
         documents.push(...tempDocuments);
       }
 
-      console.log(`Extracted ${documents.length} documents. Ingesting to ${indexName}...`);
+      console.log(`Extracted ${String(documents.length)} documents. Ingesting to ${indexName}...`);
 
       const CHUNK_SIZE = 10_000;
       const documentChunks = _.chunk(documents, CHUNK_SIZE);
@@ -90,12 +98,15 @@ export default async function bulkIngestDocuments(
         const response = await databaseService.bulkIngestDocuments(
           indexName,
           documentChunk,
-          documentIdOptions,
-          generatedTimestampOptions,
+          resolvedDocIdOptions,
+          resolvedTimestampOptions,
           (document, error) => {
             const doc = document as Record<string, unknown>;
-            const docId = documentIdOptions ? doc[documentIdOptions.idKey] : undefined;
-            const idPart = docId != null ? `_id: ${String(docId)}` : "no _id";
+            const docId = resolvedDocIdOptions ? doc[resolvedDocIdOptions.idKey] : undefined;
+            const idPart =
+              typeof docId === "string" || typeof docId === "number"
+                ? `_id: ${String(docId)}`
+                : "no _id";
             console.error(`[bulk ingest] Document failed (${idPart}): ${error.reason}`);
           },
         );
@@ -105,16 +116,19 @@ export default async function bulkIngestDocuments(
         totalFailed += failed;
 
         console.log(
-          `Ingested ${totalSucceeded}/${totalDocuments} documents into "${indexName}"! (Failed: ${totalFailed})`,
+          `Ingested ${String(totalSucceeded)}/${String(totalDocuments)} documents into "${indexName}"! (Failed: ${String(totalFailed)})`,
         );
       }
     } catch (error) {
-      console.error(`[${i + 1}/${inputZipPaths.length}] Failed to process ${zipFilePath}:`, error);
+      console.error(
+        `[${String(i + 1)}/${String(inputZipPaths.length)}] Failed to process ${zipFilePath}:`,
+        error,
+      );
     } finally {
       cleanupPromises.push(
-        removeDir(tempProcessingFilePath).catch((error) =>
-          console.error(`Failed to clean up ${tempProcessingFilePath}:`, error),
-        ),
+        removeDir(tempProcessingFilePath).catch((error: unknown) => {
+          console.error(`Failed to clean up ${tempProcessingFilePath}:`, error);
+        }),
       );
     }
   }
