@@ -67,7 +67,7 @@ Copy `.env.template` to `.env` and fill in these values:
 | `DATABASE_URL` | — | Moved to `src/configs/environments.ts` (per-environment) |
 | `AUTHENTICATION_METHOD` | — | Moved to `src/configs/environments.ts` (per-environment) |
 | `VALIDATE_SSL` | — | Moved to `src/configs/environments.ts` (per-environment) |
-| `OPENSEARCH_VERSION` | Docker only | OpenSearch image version for docker compose |
+| `OPENSEARCH_VERSION` | Docker only | OpenSearch image version for docker compose (default `3.7.0`, pinned rather than `latest`) |
 | `OPENSEARCH_DATABASE_PORT` | Docker only | Host port for OpenSearch (default `9200`) |
 | `OPENSEARCH_DASHBOARDS_PORT` | Docker only | Host port for Dashboards UI (default `5601`) |
 | `OPENSEARCH_INITIAL_ADMIN_PASSWORD` | Docker only | Admin password for local cluster |
