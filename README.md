@@ -172,3 +172,40 @@ Deletes documents from one or more indices using an optional query body. When `q
   }
 }
 ```
+
+### (Script) Replace Mapping
+
+OpenSearch doesn't allow changing an existing field's mapping in place, so this script automates the standard workaround: create a new, versioned index with the new mapping (`<index>-v1`, `<index>-v2`, ...), reindex documents into it, verify the document count matches, then point an alias at the new index.
+
+`targetIndex` can be either a plain index name or an existing alias:
+- If it's a plain index with no alias yet, you'll be prompted for the alias name to create (defaults to the index name itself). If you accept that default, the original index is deleted automatically once reindexing completes, since OpenSearch doesn't allow an index and an alias to share a name.
+- If it's already an alias (e.g. from a previous run of this script), any alias(es) pointing at it are atomically repointed at the new versioned index — no downtime.
+
+Either way, you'll then be asked separately whether to delete the now-superseded original index (defaults to **no** — it's left in place for manual cleanup). Not available in the `production` environment.
+
+```js
+{
+  // index (or alias) whose mapping should be replaced
+  "targetIndex": "sample-index",
+  // new OpenSearch index mapping to apply
+  "mappings": {
+    "properties": {
+      "age": {
+        "type": "integer"
+      }
+    }
+  },
+  // (optional) index shard count for the new index. Defaults to 1
+  "shardCount": 1,
+  // (optional) index replica count for the new index. Defaults to 1
+  "replicaCount": 1,
+  // (optional) max result size + from for the new index. Defaults to 10,000
+  "maxResultWindow": 10000,
+  // (optional) index refresh interval for the new index. Defaults to "1s" (1 second)
+  "refreshInterval": "1s",
+  // (optional) index analyzers for the new index (https://opensearch.org/docs/latest/analyzers/custom-analyzer/)
+  "analysis": {},
+  // (optional) Painless script applied to each document while reindexing (e.g. to rename/reformat a field)
+  "reindexScript": "ctx._source.newField = ctx._source.remove('oldField')"
+}
+```

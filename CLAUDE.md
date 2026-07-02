@@ -1,6 +1,6 @@
 # opensearch-utils
 
-A CLI toolkit for managing OpenSearch databases. Provides five interactive scripts for bulk ingesting documents, creating indices, exporting documents, exporting index mappings, and deleting documents from indices. Runs entirely from the terminal using interactive prompts — no web UI.
+A CLI toolkit for managing OpenSearch databases. Provides six interactive scripts for bulk ingesting documents, creating indices, exporting documents, exporting index mappings, deleting documents from indices, and replacing an index's mapping. Runs entirely from the terminal using interactive prompts — no web UI.
 
 ## Quick Start
 
@@ -37,17 +37,18 @@ src/
 ├── singletons.ts          createDatabaseClient(config) factory — constructs DatabaseClient from an EnvironmentConfig
 ├── classes/
 │   ├── DatabaseClient.ts  OpenSearch connection management (BASIC_AUTH or CERTIFICATE_AUTH)
-│   ├── DatabaseService.ts High-level DB operations: addIndex, bulkIngestDocuments, bulkRetrieveDocuments, fetchIndexInfo, deleteDocumentsByQuery
+│   ├── DatabaseService.ts High-level DB operations: addIndex, bulkIngestDocuments, bulkRetrieveDocuments, fetchIndexInfo, deleteDocumentsByQuery, indexExists, deleteIndex, resolveAlias, getAliasesForIndex, updateAliases, reindex, getTaskStatus, countDocuments
 │   └── FileManager.ts     Static file helpers: saveAsJson, saveAsJsonLine, readJsonLine
 ├── scripts/
 │   ├── bulk-ingest/       Extract ZIP → read JSONL → chunk at 10k → bulk ingest
 │   ├── create-index/      Create index with custom mappings and analyzers
 │   ├── delete-documents-from-indices/  Confirm → deleteByQuery per index
 │   ├── export-docs-from-index/   Scroll all docs → write JSONL → compress to ZIP
-│   └── export-mapping-from-indices/  Fetch index mapping+settings → save as JSON
+│   ├── export-mapping-from-indices/  Fetch index mapping+settings → save as JSON
+│   └── replace-mapping/  Create versioned index with new mapping → reindex → verify counts → point alias at new index → optionally delete original
 ├── configs/
 │   └── environments.ts    Per-environment database config (URL, auth method, SSL, file paths, allowedScripts) for local/development/staging/test/production; also exports ScriptSelectionType
-├── errors/                DatabaseConnectionError, InvalidConfigError, InvalidDatabaseIndexError
+├── errors/                DatabaseConnectionError, InvalidConfigError, InvalidDatabaseIndexError, IndexNotFoundError, IndexAlreadyExistsError, ReindexVerificationError, AliasUpdateError
 ├── types/                 dateUtilsTypes.ts
 └── utils/                 dateUtils, folderUtils, booleanHelper
 ```
@@ -83,6 +84,7 @@ Each script is driven by a JSON config file selected interactively at runtime. P
 | Delete Documents | `configs/delete-documents-from-indices/` | `configs/delete-documents-from-indices/sample.json` |
 | Export Documents | `configs/export-from-index/` | `configs/export-from-index/sample.json` |
 | Export Mapping | `configs/export-mapping-from-indices/` | `configs/export-mapping-from-indices/sample.json` |
+| Replace Mapping | `configs/replace-mapping/` | `configs/replace-mapping/sample.json` |
 
 See the `interfaces.ts` in each script folder for the exact config shape.
 

@@ -27,9 +27,7 @@ export default async function exportMappingFromIndices(
 ): Promise<void> {
   const parseResult = ExportMappingFromIndicesSchema.safeParse(options);
   if (!parseResult.success) {
-    throw new InvalidConfigError(
-      parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
-    );
+    throw new InvalidConfigError(parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "));
   }
   const { indices } = parseResult.data;
   const databaseService = new DatabaseService(databaseClient);

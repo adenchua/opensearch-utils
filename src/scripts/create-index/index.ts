@@ -9,9 +9,7 @@ import CreateIndexOption, { CreateIndexSchema } from "./interfaces";
 export default async function createIndex(options: CreateIndexOption, databaseClient: DatabaseClient): Promise<void> {
   const parseResult = CreateIndexSchema.safeParse(options);
   if (!parseResult.success) {
-    throw new InvalidConfigError(
-      parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
-    );
+    throw new InvalidConfigError(parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "));
   }
   const {
     indexName,

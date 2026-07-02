@@ -3,7 +3,8 @@ export type ScriptSelectionType =
   | "BULK_INGEST"
   | "EXPORT_FROM_INDEX"
   | "EXPORT_INDEX_MAPPING"
-  | "DELETE_DOCUMENTS_FROM_INDICES";
+  | "DELETE_DOCUMENTS_FROM_INDICES"
+  | "REPLACE_MAPPING";
 
 export interface EnvironmentConfig {
   databaseUrl: string;
@@ -33,6 +34,7 @@ export const environmentConfigs: Record<AppEnvironment, EnvironmentConfig> = {
       "EXPORT_FROM_INDEX",
       "EXPORT_INDEX_MAPPING",
       "DELETE_DOCUMENTS_FROM_INDICES",
+      "REPLACE_MAPPING",
     ],
   },
   development: {
@@ -49,6 +51,7 @@ export const environmentConfigs: Record<AppEnvironment, EnvironmentConfig> = {
       "EXPORT_FROM_INDEX",
       "EXPORT_INDEX_MAPPING",
       "DELETE_DOCUMENTS_FROM_INDICES",
+      "REPLACE_MAPPING",
     ],
   },
   staging: {
@@ -65,6 +68,7 @@ export const environmentConfigs: Record<AppEnvironment, EnvironmentConfig> = {
       "EXPORT_FROM_INDEX",
       "EXPORT_INDEX_MAPPING",
       "DELETE_DOCUMENTS_FROM_INDICES",
+      "REPLACE_MAPPING",
     ],
   },
   test: {
@@ -81,6 +85,7 @@ export const environmentConfigs: Record<AppEnvironment, EnvironmentConfig> = {
       "EXPORT_FROM_INDEX",
       "EXPORT_INDEX_MAPPING",
       "DELETE_DOCUMENTS_FROM_INDICES",
+      "REPLACE_MAPPING",
     ],
   },
   production: {

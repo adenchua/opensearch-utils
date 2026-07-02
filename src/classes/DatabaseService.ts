@@ -1,9 +1,11 @@
 import { Hit, TotalHits } from "@opensearch-project/opensearch/api/_types/_core.search.js";
+import { Action as UpdateAliasesAction } from "@opensearch-project/opensearch/api/_types/indices.update_aliases.js";
 import {
   Indices_Create_RequestBody,
   Indices_Get_ResponseBody,
   Search_RequestBody,
   Search_ResponseBody,
+  Tasks_Get_ResponseBody,
 } from "@opensearch-project/opensearch/api/index.js";
 
 import InvalidDatabaseIndexError from "../errors/InvalidDatabaseIndexError";
@@ -176,5 +178,101 @@ export default class DatabaseService {
 
     const responseBody = response.body as { deleted?: number };
     return { deleted: responseBody.deleted ?? 0 };
+  }
+
+  // Checks whether a concrete index exists
+  async indexExists(indexName: string): Promise<boolean> {
+    if (indexName === "") {
+      throw new InvalidDatabaseIndexError();
+    }
+
+    const response = await this.databaseClient.getDatabaseClient().indices.exists({
+      index: indexName,
+    });
+    return response.body;
+  }
+
+  // Deletes an index
+  async deleteIndex(indexName: string): Promise<unknown> {
+    if (indexName === "") {
+      throw new InvalidDatabaseIndexError();
+    }
+
+    const response = await this.databaseClient.getDatabaseClient().indices.delete({
+      index: indexName,
+    });
+    return response.body;
+  }
+
+  // Resolves a name to the concrete index it points to if it's an alias, otherwise returns null
+  async resolveAlias(name: string): Promise<string | null> {
+    if (name === "") {
+      throw new InvalidDatabaseIndexError();
+    }
+
+    const existsResponse = await this.databaseClient.getDatabaseClient().indices.existsAlias({
+      name,
+    });
+
+    if (!existsResponse.body) {
+      return null;
+    }
+
+    const getAliasResponse = await this.databaseClient.getDatabaseClient().indices.getAlias({
+      name,
+    });
+    return Object.keys(getAliasResponse.body)[0] ?? null;
+  }
+
+  // Retrieves the names of all aliases currently pointing at an index
+  async getAliasesForIndex(indexName: string): Promise<string[]> {
+    const response = await this.fetchIndexInfo(indexName);
+    return Object.keys(response[indexName].aliases ?? {});
+  }
+
+  // Atomically adds and/or removes aliases in a single call
+  async updateAliases(actions: UpdateAliasesAction[]): Promise<unknown> {
+    const response = await this.databaseClient.getDatabaseClient().indices.updateAliases({
+      body: { actions },
+    });
+    return response.body;
+  }
+
+  // Starts an asynchronous reindex from source into dest, optionally applying a Painless transform script
+  async reindex(source: string, dest: string, script?: string): Promise<string> {
+    if (source === "" || dest === "") {
+      throw new InvalidDatabaseIndexError();
+    }
+
+    const response = await this.databaseClient.getDatabaseClient().reindex({
+      wait_for_completion: false,
+      body: {
+        source: { index: source },
+        dest: { index: dest },
+        ...(script ? { script: { source: script } } : {}),
+      },
+    });
+
+    const responseBody = response.body as { task: string };
+    return responseBody.task;
+  }
+
+  // Fetches the status of an asynchronous task (e.g. a reindex started via reindex())
+  async getTaskStatus(taskId: string): Promise<Tasks_Get_ResponseBody> {
+    const response = await this.databaseClient.getDatabaseClient().tasks.get({
+      task_id: taskId,
+    });
+    return response.body;
+  }
+
+  // Refreshes and counts the documents currently visible in an index
+  async countDocuments(indexName: string): Promise<number> {
+    if (indexName === "") {
+      throw new InvalidDatabaseIndexError();
+    }
+
+    await this.databaseClient.getDatabaseClient().indices.refresh({ index: indexName });
+    const response = await this.databaseClient.getDatabaseClient().count({ index: indexName });
+    return response.body.count;
   }
 }

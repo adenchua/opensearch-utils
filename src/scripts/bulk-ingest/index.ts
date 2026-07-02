@@ -20,9 +20,7 @@ export default async function bulkIngestDocuments(
 ): Promise<void> {
   const parseResult = BulkIngestDocumentsSchema.safeParse(options);
   if (!parseResult.success) {
-    throw new InvalidConfigError(
-      parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
-    );
+    throw new InvalidConfigError(parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "));
   }
   const { indexName, inputZipPaths, documentIdOptions, generatedTimestampOptions } = parseResult.data;
   const databaseService = new DatabaseService(databaseClient);
@@ -35,9 +33,7 @@ export default async function bulkIngestDocuments(
     };
   }
 
-  let resolvedTimestampOptions:
-    | { timestampKey: string; timestampFormat: ALLOWED_DATE_FORMATS_TYPE }
-    | undefined;
+  let resolvedTimestampOptions: { timestampKey: string; timestampFormat: ALLOWED_DATE_FORMATS_TYPE } | undefined;
   if (generatedTimestampOptions) {
     const { timestampFormat, timestampKey } = generatedTimestampOptions;
     resolvedTimestampOptions = {
@@ -52,9 +48,7 @@ export default async function bulkIngestDocuments(
     const zipFilePath = path.join(srcFolderPath, zipPath);
     const tempProcessingFilePath = path.join(srcFolderPath, `temp-${uuidv4()}`);
     try {
-      console.log(
-        `[${String(i + 1)}/${String(inputZipPaths.length)}] Extracting from ${zipFilePath}...`,
-      );
+      console.log(`[${String(i + 1)}/${String(inputZipPaths.length)}] Extracting from ${zipFilePath}...`);
 
       await fs.access(zipFilePath).catch((error: unknown) => {
         console.error(error);
@@ -87,10 +81,7 @@ export default async function bulkIngestDocuments(
           (document, error) => {
             const doc = document as Record<string, unknown>;
             const docId = resolvedDocIdOptions ? doc[resolvedDocIdOptions.idKey] : undefined;
-            const idPart =
-              typeof docId === "string" || typeof docId === "number"
-                ? `_id: ${String(docId)}`
-                : "no _id";
+            const idPart = typeof docId === "string" || typeof docId === "number" ? `_id: ${String(docId)}` : "no _id";
             console.error(`[bulk ingest] Document failed (${idPart}): ${error.reason}`);
           },
         );
@@ -104,10 +95,7 @@ export default async function bulkIngestDocuments(
         );
       }
     } catch (error) {
-      console.error(
-        `[${String(i + 1)}/${String(inputZipPaths.length)}] Failed to process ${zipFilePath}:`,
-        error,
-      );
+      console.error(`[${String(i + 1)}/${String(inputZipPaths.length)}] Failed to process ${zipFilePath}:`, error);
     } finally {
       cleanupPromises.push(
         removeDir(tempProcessingFilePath).catch((error: unknown) => {

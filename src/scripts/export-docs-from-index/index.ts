@@ -17,16 +17,9 @@ export default async function exportDocsFromIndex(
 ): Promise<void> {
   const parseResult = ExportFromIndexSchema.safeParse(options);
   if (!parseResult.success) {
-    throw new InvalidConfigError(
-      parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
-    );
+    throw new InvalidConfigError(parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "));
   }
-  const {
-    indexName,
-    searchQuery,
-    scrollSize = 500,
-    scrollWindowTimeout = "1m",
-  } = parseResult.data;
+  const { indexName, searchQuery, scrollSize = 500, scrollWindowTimeout = "1m" } = parseResult.data;
   const resolvedSearchQuery = (searchQuery ?? { query: { match_all: {} } }) as Search_RequestBody;
   const databaseService = new DatabaseService(databaseClient);
 

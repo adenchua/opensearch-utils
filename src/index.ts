@@ -12,6 +12,7 @@ import createIndex from "./scripts/create-index";
 import deleteDocumentsFromIndices from "./scripts/delete-documents-from-indices";
 import exportDocsFromIndex from "./scripts/export-docs-from-index";
 import exportMappingFromIndices from "./scripts/export-mapping-from-indices";
+import replaceMapping from "./scripts/replace-mapping";
 import { createDatabaseClient } from "./singletons";
 
 /** Prompts the user to select an environment */
@@ -78,6 +79,15 @@ async function runScriptSelectionPrompt(
           ? "Not available in this environment"
           : false,
       },
+      {
+        name: "6. Replace index mapping",
+        value: "REPLACE_MAPPING",
+        description:
+          "Recreates an index with a new mapping via reindex, and points an alias at the new index",
+        disabled: !allowedScripts.includes("REPLACE_MAPPING")
+          ? "Not available in this environment"
+          : false,
+      },
     ],
   });
 
@@ -136,6 +146,16 @@ async function runScript(
         const { filename, config } = selectedConfigs[i];
         console.log(`\n[${i + 1}/${total}] Running: ${filename}`);
         await deleteDocumentsFromIndices(config, databaseClient);
+      }
+      break;
+    }
+    case "REPLACE_MAPPING": {
+      const selectedConfigs = await runConfigSelectionPrompt("replace-mapping");
+      const total = selectedConfigs.length;
+      for (let i = 0; i < total; i++) {
+        const { filename, config } = selectedConfigs[i];
+        console.log(`\n[${i + 1}/${total}] Running: ${filename}`);
+        await replaceMapping(config, databaseClient);
       }
       break;
     }

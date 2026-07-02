@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ADDED
+
+- **Replace Mapping** script — recreates an index under a new versioned name with an updated mapping, reindexes documents via OpenSearch's `_reindex` API, verifies document counts, and points an alias at the new index (repointing atomically on repeat runs). Deleting the superseded original index is a separate opt-in confirmation, except when it's unavoidable (default alias name matches the original index name). Not available in the `production` environment.
+- `DatabaseService` methods: `indexExists`, `deleteIndex`, `resolveAlias`, `getAliasesForIndex`, `updateAliases`, `reindex`, `getTaskStatus`, `countDocuments`
+- `IndexNotFoundError`, `IndexAlreadyExistsError`, `ReindexVerificationError`, `AliasUpdateError` error classes
+
 ## [1.7.2] - 2026-06-12
 
 ### ADDED

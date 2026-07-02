@@ -1,0 +1,14 @@
+{
+  "targetIndex": "sample-index",
+  "mappings": {
+    "properties": {
+      "age": {
+        "type": "integer"
+      }
+    }
+  },
+  "shardCount": 1,
+  "replicaCount": 1,
+  "maxResultWindow": 10000,
+  "refreshInterval": "1s"
+}

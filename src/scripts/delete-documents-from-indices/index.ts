@@ -12,16 +12,16 @@ export default async function deleteDocumentsFromIndices(
 ): Promise<void> {
   const parseResult = DeleteDocumentsFromIndicesSchema.safeParse(options);
   if (!parseResult.success) {
-    throw new InvalidConfigError(
-      parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
-    );
+    throw new InvalidConfigError(parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "));
   }
   const { indices, queryBody } = parseResult.data;
   const resolvedQueryBody = (queryBody ?? { query: { match_all: {} } }) as Search_RequestBody;
   const databaseService = new DatabaseService(databaseClient);
 
   console.log("\nIndices to delete by query:");
-  indices.forEach((index) => { console.log(`  - ${index}`); });
+  indices.forEach((index) => {
+    console.log(`  - ${index}`);
+  });
   console.log("\nQuery body:");
   console.log(JSON.stringify(resolvedQueryBody, null, 2));
 
