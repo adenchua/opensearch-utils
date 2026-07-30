@@ -51,8 +51,14 @@ export default async function exportMappingFromIndices(
 
     const output = {
       indexName,
-      shardCount: response[indexName].settings?.index?.number_of_shards,
-      replicaCount: response[indexName].settings?.index?.number_of_replicas,
+      shardCount:
+        response[indexName].settings?.index?.number_of_shards != null
+          ? Number(response[indexName].settings.index.number_of_shards)
+          : undefined,
+      replicaCount:
+        response[indexName].settings?.index?.number_of_replicas != null
+          ? Number(response[indexName].settings.index.number_of_replicas)
+          : undefined,
       mappings: response[indexName].mappings,
       analysis: response[indexName].settings?.index?.analysis,
       aliases: response[indexName].aliases,

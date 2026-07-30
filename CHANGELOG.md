@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DatabaseService` methods: `indexExists`, `deleteIndex`, `resolveAlias`, `getAliasesForIndex`, `updateAliases`, `reindex`, `getTaskStatus`, `countDocuments`
 - `IndexNotFoundError`, `IndexAlreadyExistsError`, `ReindexVerificationError`, `AliasUpdateError` error classes
 
+### FIXED
+
+- **Export Mapping from Indices** script exporting `shardCount`/`replicaCount` as strings (OpenSearch's settings API always returns them as strings), causing a directly-copied exported mapping to fail `create-index`/`replace-mapping` config validation, which requires numbers
+
 ## [1.7.2] - 2026-06-12
 
 ### ADDED

@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.2";
+export const APP_VERSION = "1.7.3";
 
 export const ALLOWED_DATE_FORMATS = ["iso8601-utc", "epoch"] as const;
 
