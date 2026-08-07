@@ -1,6 +1,6 @@
+import AdmZip from "adm-zip";
 import { promises as fs } from "fs";
 import path from "path";
-import { COMPRESSION_LEVEL, zip } from "zip-a-folder";
 
 import { getTodayDatePrettyFormat } from "./dateUtils";
 
@@ -11,7 +11,9 @@ export async function removeDir(directory: string): Promise<void> {
 
 // Zips a folder from the source to destination directory
 export async function zipFolder(srcDir: string, destDir: string, fileType = "zip") {
-  await zip(srcDir, `${destDir}.${fileType}`, { compression: COMPRESSION_LEVEL.high });
+  const zip = new AdmZip();
+  await zip.addLocalFolderPromise(srcDir, {});
+  await zip.writeZipPromise(`${destDir}.${fileType}`);
 }
 
 export function getOutputFolderPath(foldername: string) {

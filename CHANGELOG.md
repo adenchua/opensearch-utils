@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Export Mapping from Indices** script exporting `shardCount`/`replicaCount` as strings (OpenSearch's settings API always returns them as strings), causing a directly-copied exported mapping to fail `create-index`/`replace-mapping` config validation, which requires numbers
 
+### CHANGED
+
+- Consolidated ZIP creation (Export Documents, Export Mapping) onto `adm-zip`, replacing `zip-a-folder`, since `adm-zip` already handled ZIP extraction and covers folder-to-ZIP creation equally well — one less dependency
+
 ### SECURITY
 
 - Replaced `decompress` (unmaintained, critical zip-slip vulnerability with no fix available — [GHSA-mp2f-45pm-3cg9](https://github.com/advisories/GHSA-mp2f-45pm-3cg9)) with `adm-zip` for ZIP extraction in the Bulk Ingest script
