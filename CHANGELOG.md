@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-08-07
+
 ### ADDED
 
 - **Replace Mapping** script — recreates an index under a new versioned name with an updated mapping, reindexes documents via OpenSearch's `_reindex` API, verifies document counts, and points an alias at the new index (repointing atomically on repeat runs). Deleting the superseded original index is a separate opt-in confirmation, except when it's unavoidable (default alias name matches the original index name). Not available in the `production` environment.
@@ -16,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### FIXED
 
 - **Export Mapping from Indices** script exporting `shardCount`/`replicaCount` as strings (OpenSearch's settings API always returns them as strings), causing a directly-copied exported mapping to fail `create-index`/`replace-mapping` config validation, which requires numbers
+
+### SECURITY
+
+- Replaced `decompress` (unmaintained, critical zip-slip vulnerability with no fix available — [GHSA-mp2f-45pm-3cg9](https://github.com/advisories/GHSA-mp2f-45pm-3cg9)) with `adm-zip` for ZIP extraction in the Bulk Ingest script
 
 ## [1.7.2] - 2026-06-12
 

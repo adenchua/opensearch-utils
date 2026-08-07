@@ -1,4 +1,4 @@
-import decompress from "decompress";
+import AdmZip from "adm-zip";
 import { promises as fs } from "fs";
 import _ from "lodash";
 import path from "path";
@@ -53,7 +53,8 @@ export default async function bulkIngestDocuments(
       await fs.access(zipFilePath).catch((error: unknown) => {
         console.error(error);
       });
-      await decompress(zipFilePath, tempProcessingFilePath);
+      const zip = new AdmZip(zipFilePath);
+      await zip.extractAllToAsync(tempProcessingFilePath, true);
 
       const documents: object[] = [];
       const filenames = await fs.readdir(tempProcessingFilePath);
